@@ -130,69 +130,9 @@ func getMaxVersionsArchive(packageName string) {
 }
 
 func main() {
-	url := "https://api.launchpad.net/devel/ubuntu/+archive/primary/?ws.op=getPublishedBinaries&binary_name=nvidia-utils-535-server&created_since_date=2024-01-01&order_by_date=true"
+	var PackageQuery string
 
-	versionsPerSeries := make(map[string]string)
+	PackageQuery = "nvidia-utils-535-server"
 
-	resp, err := http.Get(url)
-	if err != nil {
-		log.Fatalf("HTTP request failed: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Unexpected status code: %d", resp.StatusCode)
-	}
-
-	var result APIResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		log.Fatalf("Failed to parse JSON: %v", err)
-	}
-
-	fmt.Printf("📦 Found %d binary publications:\n\n", result.TotalSize)
-
-	var currSeries, currArch string
-	for _, entry := range result.Entries {
-		fmt.Printf("🧱 %s\n", entry.DisplayName)
-		fmt.Printf("  → Version:     %s\n", entry.BinaryPackageVersion)
-		fmt.Printf("  → Series/Arch: %s\n", entry.ArchitectureSeries)
-		fmt.Printf("  → Published:   %s\n", entry.DatePublished)
-		fmt.Printf("  → Pocket:      %s | Status: %s\n", entry.Pocket, entry.Status)
-		fmt.Printf("  → Build Link:  %s\n", entry.BuildLink)
-		fmt.Printf("  → Source:      %s (%s)\n", entry.SourcePackageName, entry.SourcePackageVersion)
-		fmt.Printf("  → Component:   %s | Section: %s\n", entry.ComponentName, entry.SectionName)
-		fmt.Println()
-
-		currSeries, currArch = SeriesArchFromDistroArchSeriesLink(entry.ArchitectureSeries)
-
-		fmt.Printf("CurrSeries: %s, CurrArch: %s\n", currSeries, currArch)
-
-		currVersion, err := version.NewVersion(entry.BinaryPackageVersion)
-		if err != nil {
-			fmt.Printf("Error in incoming BinaryPackageVersion %s\n", err)
-		}
-
-		_, valueExists := versionsPerSeries[currSeries]
-		if !valueExists {
-			fmt.Printf("This series: %s is empty so assigning as max value\n", currSeries)
-			versionsPerSeries[currSeries] = entry.BinaryPackageVersion
-		}
-
-		currMaxVersion, err := version.NewVersion(versionsPerSeries[currSeries])
-		if err != nil {
-			fmt.Printf("Error %s", err)
-		}
-
-		if currVersion.GreaterThan(currMaxVersion) {
-			versionsPerSeries[currSeries] = entry.BinaryPackageVersion
-		} else {
-			fmt.Printf("%s is not greater than %s\n", entry.BinaryPackageVersion, versionsPerSeries[currSeries])
-		}
-
-		//versionsPerSeries[currSeries] = entry.BinaryPackageVersion
-	}
-
-	for index, version := range versionsPerSeries {
-		fmt.Printf("Series %s Version %s\n", index, version)
-	}
+	getMaxVersionsArchive(PackageQuery)
 }
