@@ -1,0 +1,50 @@
+[
+  {
+    "branch_name": "535",
+    "is_server": false,
+    "is_supported": true,
+    "current_upstream_version": ""
+  },
+  {
+    "branch_name": "535-server",
+    "is_server": true,
+    "is_supported": true,
+    "current_upstream_version": ""
+  },
+  {
+    "branch_name": "550",
+    "is_server": false,
+    "is_supported": true,
+    "current_upstream_version": ""
+  },
+  {
+    "branch_name": "550-server",
+    "is_server": true,
+    "is_supported": true,
+    "current_upstream_version": ""
+  },
+  {
+    "branch_name": "570",
+    "is_server": false,
+    "is_supported": true,
+    "current_upstream_version": ""
+  },
+  {
+    "branch_name": "570-server",
+    "is_server": true,
+    "is_supported": true,
+    "current_upstream_version": ""
+  },
+  {
+    "branch_name": "575",
+    "is_server": false,
+    "is_supported": true,
+    "current_upstream_version": ""
+  },
+  {
+    "branch_name": "575-server",
+    "is_server": true,
+    "is_supported": true,
+    "current_upstream_version": ""
+  }
+]
