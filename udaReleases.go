@@ -1,13 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
+	"text/tabwriter"
 	"time"
-
-	"fmt"
 
 	"golang.org/x/net/html"
 )
@@ -18,28 +19,32 @@ type DriverEntry struct {
 	IsBeta  bool
 }
 
-// Print to standard output using fmt
-func (d DriverEntry) Print() {
-	fmt.Printf("Version: %s | Date: %s | Beta: %t\n", d.Version, d.Date.Format("2006-01-02"), d.IsBeta)
-}
+// PrintTable prints all DriverEntries in a table format to standard output.
+func PrintTableUDAReleases(entries []DriverEntry) {
+	fmt.Println("These are the latest nvidia.com UDA releases:")
 
-// Log to stdout using log.Println
-func (d DriverEntry) Log() {
-	log.Printf("Version: %s | Date: %s | Beta: %t", d.Version, d.Date.Format("2006-01-02"), d.IsBeta)
-}
-
-// PrintAll prints all DriverEntries to standard output using fmt.Println
-func PrintAlludaReleases(entries []DriverEntry) {
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintln(w, "Version\tDate\tBeta")
 	for _, entry := range entries {
-		entry.Print()
+		fmt.Fprintf(w, "%s\t%s\t%t\n", entry.Version, entry.Date.Format("2006-01-02"), entry.IsBeta)
 	}
+	w.Flush()
+	fmt.Println("----------------------------------------------------")
 }
 
-// LogAll logs all DriverEntries using log.Println
-func LogAlludaReleases(entries []DriverEntry) {
+// LogTable logs all DriverEntries in a table format using log.Println.
+func LogTableUDAReleases(entries []DriverEntry) {
+
+	log.Println("These are the latest nvidia.com UDA releases:")
+
+	var b strings.Builder
+	b.WriteString("Version\tDate\tBeta\n")
 	for _, entry := range entries {
-		entry.Log()
+		fmt.Fprintf(&b, "%s\t%s\t%t\n", entry.Version, entry.Date.Format("2006-01-02"), entry.IsBeta)
 	}
+	log.Print("\n" + b.String())
+
+	log.Println("----------------------------------------------------")
 }
 
 func GetNvidiaDriverEntries() ([]DriverEntry, error) {
@@ -201,6 +206,7 @@ func UpdateSupportedUDAReleases(entries []DriverEntry, releases []SupportedRelea
 		major := rel.BranchName
 		if entry, ok := latestByMajor[major]; ok {
 			releases[i].CurrentUpstreamVersion = entry.Version
+			releases[i].DatePublished = entry.Date.Format("2006-01-02")
 		}
 	}
 	return releases

@@ -64,29 +64,62 @@ func getLatestServerDriverVersions() (map[string]DriverInfo, AllBranches, error)
 }
 
 func logDriverVersions(data map[string]DriverInfo, branches AllBranches) {
+	log.Println("These are the published ERD Driver Versions:")
+	header := fmt.Sprintf(
+		"%-8s  %-18s  %-12s  %-10s  %-12s  %s",
+		"BRANCH", "TYPE", "VERSION", "DATE", "ARCH", "RUNFILE_URL",
+	)
+	log.Println(header)
 	for version, info := range data {
 		branch := branches[version]
-		log.Printf("== Branch %s (%s) ==\n", version, branch.Type)
-		log.Printf("- Version: %s\n", info.ReleaseVersion)
-		log.Printf("- Date:    %s\n", info.ReleaseDate)
-		log.Printf("- Notes:   %s\n", info.ReleaseNotes)
 		for arch, url := range info.RunfileURL {
-			log.Printf("  [%s] %s\n", arch, url)
+			log.Printf(
+				"%-8s  %-18s  %-12s  %-10s  %-12s  %s",
+				version, branch.Type, info.ReleaseVersion, info.ReleaseDate, arch, url,
+			)
 		}
-		log.Println()
 	}
+	log.Println("----------------------------------------------------")
 }
 
-func printDriverVersionsToStdout(data map[string]DriverInfo, branches AllBranches) {
+func printDriverVersions(data map[string]DriverInfo, branches AllBranches) {
+	fmt.Println("These are the published ERD Driver versions:")
+	fmt.Printf(
+		"%-8s  %-18s  %-12s  %-10s  %-12s  %s\n",
+		"BRANCH", "TYPE", "VERSION", "DATE", "ARCH", "RUNFILE_URL",
+	)
 	for version, info := range data {
 		branch := branches[version]
-		fmt.Printf("== Branch %s (%s) ==\n", version, branch.Type)
-		fmt.Printf("- Version: %s\n", info.ReleaseVersion)
-		fmt.Printf("- Date:    %s\n", info.ReleaseDate)
-		fmt.Printf("- Notes:   %s\n", info.ReleaseNotes)
 		for arch, url := range info.RunfileURL {
-			fmt.Printf("  [%s] %s\n", arch, url)
+			fmt.Printf(
+				"%-8s  %-18s  %-12s  %-10s  %-12s  %s\n",
+				version, branch.Type, info.ReleaseVersion, info.ReleaseDate, arch, url,
+			)
 		}
-		fmt.Println()
 	}
+	fmt.Println("----------------------------------------------------")
+}
+
+func UpdateSupportedReleasesWithLatestERD(branches map[string]BranchEntry, releases []SupportedRelease) []SupportedRelease {
+	for i := range releases {
+		rel := &releases[i]
+		if len(rel.BranchName) > 7 && rel.BranchName[len(rel.BranchName)-7:] == "-server" {
+			// Extract the 3 digit number preceding "-server"
+			branchNum := rel.BranchName[:len(rel.BranchName)-7]
+			if branch, ok := branches[branchNum]; ok && len(branch.DriverInfo) > 0 {
+				// Find the latest DriverInfo by ReleaseDate
+				latest := branch.DriverInfo[0]
+				for _, info := range branch.DriverInfo[1:] {
+					d1, err1 := time.Parse("2006-01-02", latest.ReleaseDate)
+					d2, err2 := time.Parse("2006-01-02", info.ReleaseDate)
+					if err1 == nil && err2 == nil && d2.After(d1) {
+						latest = info
+					}
+				}
+				rel.CurrentUpstreamVersion = latest.ReleaseVersion
+				rel.DatePublished = latest.ReleaseDate
+			}
+		}
+	}
+	return releases
 }
