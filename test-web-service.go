@@ -21,6 +21,7 @@ type TestSeries struct {
 	UpdatesSecurity string
 	Proposed        string
 	UpstreamVersion string
+	ReleaseDate     string
 	UpdatesColor    string
 	ProposedColor   string
 }

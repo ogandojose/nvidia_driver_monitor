@@ -176,13 +176,14 @@ func PrintSourceVersionMapTable(vps *SourceVersionPerSeries) {
 func PrintSourceVersionMapTableWithSupported(vps *SourceVersionPerSeries, supportedReleases []releases.SupportedRelease) {
 	fmt.Printf("Source Package: %s\n", vps.PackageName)
 	fmt.Printf(
-		"| %-30s | %-42s | %-42s | %-20s |\n",
+		"| %-30s | %-42s | %-42s | %-20s | %-15s |\n",
 		"Series",
 		"updates_security",
 		"proposed",
 		"Upstream Version",
+		"Release Date",
 	)
-	fmt.Println("|--------------------------------|--------------------------------------------|--------------------------------------------|----------------------|")
+	fmt.Println("|--------------------------------|--------------------------------------------|--------------------------------------------|----------------------|-----------------|")
 
 	// Build a lookup: branch name -> SupportedRelease
 	supportedMap := make(map[string]releases.SupportedRelease)
@@ -227,8 +228,12 @@ func PrintSourceVersionMapTableWithSupported(vps *SourceVersionPerSeries, suppor
 		updatesColor := ColorReset
 		proposedColor := ColorReset
 		upstreamVersion := "-"
+		releaseDate := "-"
 		if found && supported.CurrentUpstreamVersion != "" {
 			upstreamVersion = supported.CurrentUpstreamVersion
+			if supported.DatePublished != "" {
+				releaseDate = supported.DatePublished
+			}
 		}
 		if pocket != nil && pocket.UpdatesSecurity.String() != "" {
 			updates = pocket.UpdatesSecurity.String()
@@ -254,11 +259,12 @@ func PrintSourceVersionMapTableWithSupported(vps *SourceVersionPerSeries, suppor
 		}
 
 		fmt.Printf(
-			"| %-30s | %s%-42s%s | %s%-42s%s | %-20s |\n",
+			"| %-30s | %s%-42s%s | %s%-42s%s | %-20s | %-15s |\n",
 			series,
 			updatesColor, updates, ColorReset,
 			proposedColor, proposed, ColorReset,
 			upstreamVersion,
+			releaseDate,
 		)
 	}
 }

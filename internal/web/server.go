@@ -17,6 +17,7 @@ type SeriesData struct {
 	UpdatesSecurity string
 	Proposed        string
 	UpstreamVersion string
+	ReleaseDate     string
 	UpdatesColor    string
 	ProposedColor   string
 }
@@ -121,9 +122,13 @@ func (ws *WebService) generatePackageData(packageName string) (*PackageData, err
 		updatesColor := ""
 		proposedColor := ""
 		upstreamVersion := "-"
+		releaseDate := "-"
 
 		if found && supported.CurrentUpstreamVersion != "" {
 			upstreamVersion = supported.CurrentUpstreamVersion
+			if supported.DatePublished != "" {
+				releaseDate = supported.DatePublished
+			}
 		}
 
 		if pocket != nil && pocket.UpdatesSecurity.String() != "" {
@@ -155,6 +160,7 @@ func (ws *WebService) generatePackageData(packageName string) (*PackageData, err
 			UpdatesSecurity: updates,
 			Proposed:        proposed,
 			UpstreamVersion: upstreamVersion,
+			ReleaseDate:     releaseDate,
 			UpdatesColor:    updatesColor,
 			ProposedColor:   proposedColor,
 		})
@@ -275,6 +281,7 @@ func (ws *WebService) indexHandler(w http.ResponseWriter, r *http.Request) {
 						<th>Updates/Security</th>
 						<th>Proposed</th>
 						<th>Upstream Version</th>
+						<th>Release Date</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -284,6 +291,7 @@ func (ws *WebService) indexHandler(w http.ResponseWriter, r *http.Request) {
 						<td class="{{.UpdatesColor}}">{{.UpdatesSecurity}}</td>
 						<td class="{{.ProposedColor}}">{{.Proposed}}</td>
 						<td class="upstream-cell">{{.UpstreamVersion}}</td>
+						<td class="upstream-cell">{{.ReleaseDate}}</td>
 					</tr>
 					{{end}}
 				</tbody>
@@ -417,6 +425,7 @@ func (ws *WebService) packageHandler(w http.ResponseWriter, r *http.Request) {
 					<th>Updates/Security</th>
 					<th>Proposed</th>
 					<th>Upstream Version</th>
+					<th>Release Date</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -426,6 +435,7 @@ func (ws *WebService) packageHandler(w http.ResponseWriter, r *http.Request) {
 					<td class="{{.UpdatesColor}}">{{.UpdatesSecurity}}</td>
 					<td class="{{.ProposedColor}}">{{.Proposed}}</td>
 					<td class="upstream-cell">{{.UpstreamVersion}}</td>
+					<td class="upstream-cell">{{.ReleaseDate}}</td>
 				</tr>
 				{{end}}
 			</tbody>
