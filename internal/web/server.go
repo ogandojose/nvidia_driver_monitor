@@ -454,7 +454,7 @@ func (ws *WebService) packageHandler(w http.ResponseWriter, r *http.Request) {
 					<th>Proposed</th>
 					<th>Upstream Version</th>
 					<th>Release Date</th>
-					<th>Next SRU Cycle</th>
+					<th>Corresponding SRU Cycle release week</th>
 				</tr>
 			</thead>
 			<tbody>

@@ -124,5 +124,19 @@
     },
     "current_upstream_version": "",
     "date_published": ""
+  },
+  {
+    "branch_name": "580-server",
+    "is_server": true,
+    "is_supported": {
+      "bionic": true,
+      "devel": true,
+      "focal": true,
+      "jammy": true,
+      "noble": true,
+      "plucky": true
+    },
+    "current_upstream_version": "",
+    "date_published": ""
   }
 ]

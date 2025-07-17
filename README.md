@@ -1,5 +1,82 @@
 # NVIDIA Driver Package Manager
 
+A Go application for monitoring NVIDIA driver package status in Ubuntu repositories with SRU cycle awareness.
+
+## Features
+
+- **Console Application**: CLI tool for viewing driver status in terminal
+- **Web Server**: Modern web interface with real-time data
+- **SRU Cycle Awareness**: Shows next Ubuntu kernel cycle dates for outdated drivers
+- **Color-coded Status**: Green for up-to-date, red for outdated drivers
+- **JSON API**: Programmatic access to driver status data
+
+## Building
+
+Use the provided Makefile to build both applications:
+
+```bash
+# Build both console and web applications
+make
+
+# Build only console application
+make console
+
+# Build only web server application
+make web
+
+# Install/update dependencies
+make deps
+```
+
+## Running
+
+```bash
+# Run console application
+make run-console
+# OR
+./nvidia-driver-status
+
+# Run web server application
+make run-web
+# OR
+./nvidia-web-server
+
+# Run web server on custom port
+./nvidia-web-server -addr :9090
+```
+
+## Web Interface
+
+Once the web server is running, access:
+- **Main Dashboard**: http://localhost:8080/
+- **Individual Package**: http://localhost:8080/package?package=nvidia-graphics-drivers-550
+- **JSON API**: http://localhost:8080/api
+
+## Development
+
+```bash
+# Format code
+make fmt
+
+# Run tests
+make test
+
+# Kill processes on port 8080
+make kill-web
+
+# Clean build artifacts (keeps mod cache)
+make clean-dev
+
+# Full clean (removes everything)
+make clean
+
+# Show project status
+make status
+
+# Show all available targets
+make help
+```
+
 ## Project Structure
 
 This project has been refactored into a more maintainable structure following Go best practices:
