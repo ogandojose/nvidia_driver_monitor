@@ -4,70 +4,72 @@ import (
 	"fmt"
 	"io"
 	"log"
+
+	"nvidia_example_550/internal/drivers"
+	"nvidia_example_550/internal/packages"
+	"nvidia_example_550/internal/releases"
 )
 
 func main() {
-	var PackageQuery string
-	//var localMaxServerVersions map[string]version.Version
-	PackageQuery = "nvidia-graphics-drivers-570"
+	// Configuration
+	packageQuery := "nvidia-graphics-drivers-570"
+	supportedReleasesFile := "supportedReleases.json"
 
-	//Disabling log
-
+	// Disable logging for cleaner output
 	log.SetOutput(io.Discard)
 
-	nv_utils_max_v, err := getMaxSourceVersionsArchive(PackageQuery)
-
+	// Get source package versions
+	sourceVersions, err := packages.GetMaxSourceVersionsArchive(packageQuery)
 	if err != nil {
-		fmt.Printf("Fatal????")
-	}
-
-	PrintSourceVersionMapTable(nv_utils_max_v)
-
-	//log.Printf("%s", localMaxServerVersions["plucky"])
-
-	//////////////////////////////////////////////////////////
-	// Get the latest UDA releases from nvidia.com
-	// and print them in a table format.
-	latestUDAAllEntries, err := GetNvidiaDriverEntries()
-	if err != nil {
-		log.Fatal(err)
-	}
-	//PrintTableUDAReleases(latestUDAAllEntries)
-
-	//Grab all of the upstream latest versions from Server. Associate with supportedReleasesJson output.
-	//latestServerAllVersions, allBranchesServer, err := getLatestServerDriverVersions()
-	_, allBranchesServer, err := getLatestServerDriverVersions()
-
-	if err != nil {
-		log.Fatalf("Error fetching driver data: %v", err)
-	}
-	//printDriverVersions(latestServerAllVersions, allBranchesServer)
-
-	//Evaluate, in order, each one of the nvidia-graphics-drivers-$$branch
-	//Compare source files and where is it.
-
-	ubuntuSupportedReleases, err := ReadSupportedReleases("supportedReleases.json")
-	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Printf("Error fetching source versions: %v\n", err)
 		return
 	}
 
-	UpdateSupportedUDAReleases(latestUDAAllEntries, ubuntuSupportedReleases)
-	UpdateSupportedReleasesWithLatestERD(allBranchesServer, ubuntuSupportedReleases)
-	// Print or log the updated releases
-	PrintSupportedReleases(ubuntuSupportedReleases) // Use PrintSupportedReleases to print to stdout
-	////////////////////////////////////////
+	packages.PrintSourceVersionMapTable(sourceVersions)
 
-	for _, release := range ubuntuSupportedReleases {
-
-		currentSourceVersion := "nvidia-graphics-drivers-" + release.BranchName
-		currentMaxVersionSource, err := getMaxSourceVersionsArchive(currentSourceVersion)
-
-		if err != nil {
-			fmt.Printf("Fatal????")
-		}
-
-		PrintSourceVersionMapTableWithSupported(currentMaxVersionSource, ubuntuSupportedReleases)
+	// Get the latest UDA releases from nvidia.com
+	udaEntries, err := drivers.GetNvidiaDriverEntries()
+	if err != nil {
+		fmt.Printf("Error fetching UDA releases: %v\n", err)
+		return
 	}
 
+	// Get server driver versions
+	_, allBranches, err := drivers.GetLatestServerDriverVersions()
+	if err != nil {
+		fmt.Printf("Error fetching server driver data: %v\n", err)
+		return
+	}
+
+	// Read supported releases configuration
+	supportedReleases, err := releases.ReadSupportedReleases(supportedReleasesFile)
+	if err != nil {
+		fmt.Printf("Error reading supported releases: %v\n", err)
+		return
+	}
+
+	// Update supported releases with latest versions
+	releases.UpdateSupportedUDAReleases(udaEntries, supportedReleases)
+	releases.UpdateSupportedReleasesWithLatestERD(allBranches, supportedReleases)
+
+	// Print updated supported releases
+	releases.PrintSupportedReleases(supportedReleases)
+
+	// Process each supported release
+	for _, release := range supportedReleases {
+		currentPackageName := "nvidia-graphics-drivers-" + release.BranchName
+		
+		currentSourceVersions, err := packages.GetMaxSourceVersionsArchive(currentPackageName)
+		if err != nil {
+			fmt.Printf("Error fetching source versions for %s: %v\n", currentPackageName, err)
+			continue
+		}
+
+		packages.PrintSourceVersionMapTableWithSupported(currentSourceVersions, supportedReleases)
+	}
+
+	// Save updated supported releases
+	if err := releases.WriteSupportedReleases(supportedReleasesFile, supportedReleases); err != nil {
+		fmt.Printf("Error writing supported releases: %v\n", err)
+	}
 }

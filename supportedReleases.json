@@ -3,104 +3,112 @@
     "branch_name": "535",
     "is_server": false,
     "is_supported": {
+      "bionic": true,
       "devel": true,
-      "plucky": true,
-      "noble": true,
-      "jammy": true,
       "focal": true,
-      "bionic": true
+      "jammy": true,
+      "noble": true,
+      "plucky": true
     },
-    "current_upstream_version": ""
+    "current_upstream_version": "535.261.03",
+    "date_published": "2025-07-17"
   },
   {
     "branch_name": "535-server",
     "is_server": true,
     "is_supported": {
+      "bionic": true,
       "devel": true,
-      "plucky": true,
-      "noble": true,
-      "jammy": true,
       "focal": true,
-      "bionic": true
+      "jammy": true,
+      "noble": true,
+      "plucky": true
     },
-    "current_upstream_version": ""
+    "current_upstream_version": "535.247.01",
+    "date_published": "2025-04-17"
   },
   {
     "branch_name": "550",
     "is_server": false,
     "is_supported": {
+      "bionic": true,
       "devel": true,
-      "plucky": true,
-      "noble": true,
-      "jammy": true,
       "focal": true,
-      "bionic": true
+      "jammy": true,
+      "noble": true,
+      "plucky": true
     },
-    "current_upstream_version": ""
+    "current_upstream_version": "550.163.01",
+    "date_published": "2025-04-17"
   },
   {
     "branch_name": "550-server",
     "is_server": true,
     "is_supported": {
+      "bionic": true,
       "devel": true,
-      "plucky": true,
-      "noble": true,
-      "jammy": true,
       "focal": true,
-      "bionic": true
+      "jammy": true,
+      "noble": true,
+      "plucky": true
     },
-    "current_upstream_version": ""
+    "current_upstream_version": "550.163.01",
+    "date_published": "2025-04-17"
   },
   {
     "branch_name": "570",
     "is_server": false,
     "is_supported": {
+      "bionic": true,
       "devel": true,
-      "plucky": true,
-      "noble": true,
-      "jammy": true,
       "focal": true,
-      "bionic": true
+      "jammy": true,
+      "noble": true,
+      "plucky": true
     },
-    "current_upstream_version": ""
+    "current_upstream_version": "570.172.08",
+    "date_published": "2025-07-17"
   },
   {
     "branch_name": "570-server",
     "is_server": true,
     "is_supported": {
+      "bionic": true,
       "devel": true,
-      "plucky": true,
-      "noble": true,
-      "jammy": true,
       "focal": true,
-      "bionic": true
+      "jammy": true,
+      "noble": true,
+      "plucky": true
     },
-    "current_upstream_version": ""
+    "current_upstream_version": "570.158.01",
+    "date_published": "2025-06-17"
   },
   {
     "branch_name": "575",
     "is_server": false,
     "is_supported": {
+      "bionic": true,
       "devel": true,
-      "plucky": true,
-      "noble": true,
-      "jammy": true,
       "focal": true,
-      "bionic": true
+      "jammy": true,
+      "noble": true,
+      "plucky": true
     },
-    "current_upstream_version": ""
+    "current_upstream_version": "575.64.03",
+    "date_published": "2025-07-01"
   },
   {
     "branch_name": "575-server",
     "is_server": true,
     "is_supported": {
+      "bionic": true,
       "devel": true,
-      "plucky": true,
-      "noble": true,
-      "jammy": true,
       "focal": true,
-      "bionic": true
+      "jammy": true,
+      "noble": true,
+      "plucky": true
     },
-    "current_upstream_version": ""
+    "current_upstream_version": "575.57.08",
+    "date_published": "2025-06-03"
   }
 ]
