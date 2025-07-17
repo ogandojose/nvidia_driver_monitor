@@ -1,4 +1,4 @@
-module nvidia_example_550
+module nvidia_driver_monitor
 
 go 1.21
 

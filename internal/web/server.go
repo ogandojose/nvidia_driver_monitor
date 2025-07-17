@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"strings"
 
-	"nvidia_example_550/internal/drivers"
-	"nvidia_example_550/internal/packages"
-	"nvidia_example_550/internal/releases"
-	"nvidia_example_550/internal/sru"
+	"nvidia_driver_monitor/internal/drivers"
+	"nvidia_driver_monitor/internal/packages"
+	"nvidia_driver_monitor/internal/releases"
+	"nvidia_driver_monitor/internal/sru"
 )
 
 // SeriesData represents the data for a single series row

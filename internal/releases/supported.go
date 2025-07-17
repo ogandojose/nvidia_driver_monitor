@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"nvidia_example_550/internal/drivers"
+	"nvidia_driver_monitor/internal/drivers"
 )
 
 // SupportedRelease represents a supported release configuration

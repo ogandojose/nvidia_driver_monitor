@@ -82,7 +82,7 @@ make help
 This project has been refactored into a more maintainable structure following Go best practices:
 
 ```
-nvidia_example_550/
+nvidia_driver_monitor/
 ├── main.go                          # Main application entry point
 ├── go.mod                           # Go module definition
 ├── go.sum                           # Go module dependencies

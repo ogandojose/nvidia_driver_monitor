@@ -5,9 +5,9 @@ import (
 	"io"
 	"log"
 
-	"nvidia_example_550/internal/drivers"
-	"nvidia_example_550/internal/packages"
-	"nvidia_example_550/internal/releases"
+	"nvidia_driver_monitor/internal/drivers"
+	"nvidia_driver_monitor/internal/packages"
+	"nvidia_driver_monitor/internal/releases"
 )
 
 func main() {

@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"nvidia_example_550/internal/releases"
-	"nvidia_example_550/internal/sru"
+	"nvidia_driver_monitor/internal/releases"
+	"nvidia_driver_monitor/internal/sru"
 
 	version "github.com/knqyf263/go-deb-version"
 )

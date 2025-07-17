@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"nvidia_example_550/internal/web"
+	"nvidia_driver_monitor/internal/web"
 )
 
 func main() {
