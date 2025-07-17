@@ -50,31 +50,6 @@ func main() {
 		return
 	}
 
-	// Update supported releases with latest versions
-	releases.UpdateSupportedUDAReleases(udaEntries, supportedReleases)
-	releases.UpdateSupportedReleasesWithLatestERD(allBranches, supportedReleases)
-
-	// Print updated supported releases
-	releases.PrintSupportedReleases(supportedReleases)
-
-	// Process each supported release
-	for _, release := range supportedReleases {
-		currentPackageName := "nvidia-graphics-drivers-" + release.BranchName
-
-		currentSourceVersions, err := packages.GetMaxSourceVersionsArchive(currentPackageName)
-		if err != nil {
-			fmt.Printf("Error fetching source versions for %s: %v\n", currentPackageName, err)
-			continue
-		}
-
-		packages.PrintSourceVersionMapTableWithSupported(currentSourceVersions, supportedReleases)
-	}
-
-	// Save updated supported releases
-	if err := releases.WriteSupportedReleases(supportedReleasesFile, supportedReleases); err != nil {
-		fmt.Printf("Error writing supported releases: %v\n", err)
-	}
-
 	// SRU Cycle Processing
 	fmt.Println("\n" + strings.Repeat("=", 80))
 	fmt.Println("SRU CYCLE INFORMATION")
@@ -86,5 +61,41 @@ func main() {
 		return
 	}
 
+	sruCycles.AddPredictedCycles()
 	sruCycles.PrintSRUCycles()
+
+	// Update supported releases with latest versions
+	releases.UpdateSupportedUDAReleases(udaEntries, supportedReleases)
+	releases.UpdateSupportedReleasesWithLatestERD(allBranches, supportedReleases)
+
+	// Print updated supported releases
+	releases.PrintSupportedReleases(supportedReleases)
+
+	// Fetch SRU cycles for package processing
+	sruCyclesForPackages, err := sru.FetchSRUCycles()
+	if err != nil {
+		fmt.Printf("Error fetching SRU cycles: %v\n", err)
+		sruCyclesForPackages = nil // Continue without SRU cycles
+	} else {
+		sruCyclesForPackages.AddPredictedCycles()
+	}
+
+	// Process each supported release
+	for _, release := range supportedReleases {
+		currentPackageName := "nvidia-graphics-drivers-" + release.BranchName
+
+		currentSourceVersions, err := packages.GetMaxSourceVersionsArchive(currentPackageName)
+		if err != nil {
+			fmt.Printf("Error fetching source versions for %s: %v\n", currentPackageName, err)
+			continue
+		}
+
+		packages.PrintSourceVersionMapTableWithSupported(currentSourceVersions, supportedReleases, sruCyclesForPackages)
+	}
+
+	// Save updated supported releases
+	if err := releases.WriteSupportedReleases(supportedReleasesFile, supportedReleases); err != nil {
+		fmt.Printf("Error writing supported releases: %v\n", err)
+	}
+
 }

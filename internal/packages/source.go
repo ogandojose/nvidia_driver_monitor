@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"nvidia_example_550/internal/releases"
+	"nvidia_example_550/internal/sru"
 
 	version "github.com/knqyf263/go-deb-version"
 )
@@ -172,18 +173,19 @@ func PrintSourceVersionMapTable(vps *SourceVersionPerSeries) {
 	}
 }
 
-// PrintSourceVersionMapTableWithSupported prints source version map with supported releases
-func PrintSourceVersionMapTableWithSupported(vps *SourceVersionPerSeries, supportedReleases []releases.SupportedRelease) {
+// PrintSourceVersionMapTableWithSupported prints source version map with supported releases and SRU cycles
+func PrintSourceVersionMapTableWithSupported(vps *SourceVersionPerSeries, supportedReleases []releases.SupportedRelease, sruCycles *sru.SRUCycles) {
 	fmt.Printf("Source Package: %s\n", vps.PackageName)
 	fmt.Printf(
-		"| %-30s | %-42s | %-42s | %-20s | %-15s |\n",
+		"| %-30s | %-42s | %-42s | %-20s | %-15s | %-15s |\n",
 		"Series",
 		"updates_security",
 		"proposed",
 		"Upstream Version",
 		"Release Date",
+		"SRU Cycle",
 	)
-	fmt.Println("|--------------------------------|--------------------------------------------|--------------------------------------------|----------------------|-----------------|")
+	fmt.Println("|--------------------------------|--------------------------------------------|--------------------------------------------|----------------------|-----------------|-----------------|")
 
 	// Build a lookup: branch name -> SupportedRelease
 	supportedMap := make(map[string]releases.SupportedRelease)
@@ -229,12 +231,15 @@ func PrintSourceVersionMapTableWithSupported(vps *SourceVersionPerSeries, suppor
 		proposedColor := ColorReset
 		upstreamVersion := "-"
 		releaseDate := "-"
+		sruCycleDate := "-"
+
 		if found && supported.CurrentUpstreamVersion != "" {
 			upstreamVersion = supported.CurrentUpstreamVersion
 			if supported.DatePublished != "" {
 				releaseDate = supported.DatePublished
 			}
 		}
+
 		if pocket != nil && pocket.UpdatesSecurity.String() != "" {
 			updates = pocket.UpdatesSecurity.String()
 			if found && supported.CurrentUpstreamVersion != "" {
@@ -243,9 +248,16 @@ func PrintSourceVersionMapTableWithSupported(vps *SourceVersionPerSeries, suppor
 					updatesColor = ColorGreen
 				} else {
 					updatesColor = ColorRed
+					// If version is red (upstream is greater), find SRU cycle
+					if sruCycles != nil && supported.DatePublished != "" {
+						if sruCycle := sruCycles.GetMinimumCutoffAfterDate(supported.DatePublished); sruCycle != nil {
+							sruCycleDate = sruCycle.ReleaseDate
+						}
+					}
 				}
 			}
 		}
+
 		if pocket != nil && pocket.Proposed.String() != "" {
 			proposed = pocket.Proposed.String()
 			if found && supported.CurrentUpstreamVersion != "" {
@@ -254,17 +266,24 @@ func PrintSourceVersionMapTableWithSupported(vps *SourceVersionPerSeries, suppor
 					proposedColor = ColorGreen
 				} else {
 					proposedColor = ColorRed
+					// If version is red (upstream is greater), find SRU cycle (only if not already set)
+					if sruCycles != nil && supported.DatePublished != "" && sruCycleDate == "-" {
+						if sruCycle := sruCycles.GetMinimumCutoffAfterDate(supported.DatePublished); sruCycle != nil {
+							sruCycleDate = sruCycle.ReleaseDate
+						}
+					}
 				}
 			}
 		}
 
 		fmt.Printf(
-			"| %-30s | %s%-42s%s | %s%-42s%s | %-20s | %-15s |\n",
+			"| %-30s | %s%-42s%s | %s%-42s%s | %-20s | %-15s | %-15s |\n",
 			series,
 			updatesColor, updates, ColorReset,
 			proposedColor, proposed, ColorReset,
 			upstreamVersion,
 			releaseDate,
+			sruCycleDate,
 		)
 	}
 }
