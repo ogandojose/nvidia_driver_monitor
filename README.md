@@ -74,3 +74,38 @@ go build -o nvidia_example .
 ## Original Files
 
 The original files have been moved to `old_files/` directory for reference and can be removed once the refactoring is verified to work correctly.
+
+## Web Service
+
+A web service is also available that displays the same information as the command-line tool in a user-friendly web interface.
+
+### Quick Start
+
+```bash
+# Build and start the web server
+./start-web-server.sh
+
+# Or manually:
+go build -o web-server ./cmd/web/
+./web-server -addr :8080
+```
+
+Then open your browser to `http://localhost:8080`
+
+### Features
+
+- **Interactive Web Interface**: Clean, responsive HTML tables showing package status
+- **Color Coding**: Green/red indicators for version matching
+- **JSON API**: REST endpoints for programmatic access
+- **Real-time Data**: Live data from Launchpad and NVIDIA sources
+
+### API Endpoints
+
+- `GET /` - Web interface showing all packages
+- `GET /package?package=<name>` - Web interface for specific package  
+- `GET /api` - JSON data for all packages
+- `GET /api?package=<name>` - JSON data for specific package
+
+See [WEB_SERVICE.md](WEB_SERVICE.md) for detailed documentation.
+
+## Usage
