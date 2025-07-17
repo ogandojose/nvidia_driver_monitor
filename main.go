@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"strings"
 
 	"nvidia_example_550/internal/drivers"
 	"nvidia_example_550/internal/packages"
 	"nvidia_example_550/internal/releases"
+	"nvidia_example_550/internal/sru"
 )
 
 func main() {
@@ -58,7 +60,7 @@ func main() {
 	// Process each supported release
 	for _, release := range supportedReleases {
 		currentPackageName := "nvidia-graphics-drivers-" + release.BranchName
-		
+
 		currentSourceVersions, err := packages.GetMaxSourceVersionsArchive(currentPackageName)
 		if err != nil {
 			fmt.Printf("Error fetching source versions for %s: %v\n", currentPackageName, err)
@@ -72,4 +74,17 @@ func main() {
 	if err := releases.WriteSupportedReleases(supportedReleasesFile, supportedReleases); err != nil {
 		fmt.Printf("Error writing supported releases: %v\n", err)
 	}
+
+	// SRU Cycle Processing
+	fmt.Println("\n" + strings.Repeat("=", 80))
+	fmt.Println("SRU CYCLE INFORMATION")
+	fmt.Println(strings.Repeat("=", 80))
+
+	sruCycles, err := sru.FetchSRUCycles()
+	if err != nil {
+		fmt.Printf("Error fetching SRU cycles: %v\n", err)
+		return
+	}
+
+	sruCycles.PrintSRUCycles()
 }

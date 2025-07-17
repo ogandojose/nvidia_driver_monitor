@@ -24,8 +24,8 @@
       "noble": true,
       "plucky": true
     },
-    "current_upstream_version": "535.247.01",
-    "date_published": "2025-04-17"
+    "current_upstream_version": "535.261.03",
+    "date_published": "2025-07-17"
   },
   {
     "branch_name": "550",
@@ -80,8 +80,8 @@
       "noble": true,
       "plucky": true
     },
-    "current_upstream_version": "570.158.01",
-    "date_published": "2025-06-17"
+    "current_upstream_version": "570.172.08",
+    "date_published": "2025-07-17"
   },
   {
     "branch_name": "575",
@@ -110,5 +110,19 @@
     },
     "current_upstream_version": "575.57.08",
     "date_published": "2025-06-03"
+  },
+  {
+    "branch_name": "580",
+    "is_server": true,
+    "is_supported": {
+      "bionic": true,
+      "devel": true,
+      "focal": true,
+      "jammy": true,
+      "noble": true,
+      "plucky": true
+    },
+    "current_upstream_version": "",
+    "date_published": ""
   }
 ]
