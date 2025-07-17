@@ -9,6 +9,7 @@ import (
 	"nvidia_example_550/internal/drivers"
 	"nvidia_example_550/internal/packages"
 	"nvidia_example_550/internal/releases"
+	"nvidia_example_550/internal/sru"
 )
 
 // SeriesData represents the data for a single series row
@@ -18,6 +19,7 @@ type SeriesData struct {
 	Proposed        string
 	UpstreamVersion string
 	ReleaseDate     string
+	SRUCycle        string
 	UpdatesColor    string
 	ProposedColor   string
 }
@@ -33,6 +35,7 @@ type WebService struct {
 	supportedReleases []releases.SupportedRelease
 	udaEntries        []drivers.DriverEntry
 	allBranches       drivers.AllBranches
+	sruCycles         *sru.SRUCycles
 }
 
 // NewWebService creates a new web service instance
@@ -65,6 +68,14 @@ func NewWebService() (*WebService, error) {
 	releases.UpdateSupportedReleasesWithLatestERD(allBranches, supportedReleases)
 
 	ws.supportedReleases = supportedReleases
+
+	// Fetch SRU cycles
+	sruCycles, err := sru.FetchSRUCycles()
+	if err != nil {
+		return nil, err
+	}
+	sruCycles.AddPredictedCycles()
+	ws.sruCycles = sruCycles
 
 	return ws, nil
 }
@@ -123,6 +134,7 @@ func (ws *WebService) generatePackageData(packageName string) (*PackageData, err
 		proposedColor := ""
 		upstreamVersion := "-"
 		releaseDate := "-"
+		sruCycleDate := "-"
 
 		if found && supported.CurrentUpstreamVersion != "" {
 			upstreamVersion = supported.CurrentUpstreamVersion
@@ -139,6 +151,12 @@ func (ws *WebService) generatePackageData(packageName string) (*PackageData, err
 					updatesColor = "success"
 				} else {
 					updatesColor = "danger"
+					// If version is red (upstream is greater), find SRU cycle
+					if ws.sruCycles != nil && supported.DatePublished != "" {
+						if sruCycle := ws.sruCycles.GetMinimumCutoffAfterDate(supported.DatePublished); sruCycle != nil {
+							sruCycleDate = sruCycle.ReleaseDate
+						}
+					}
 				}
 			}
 		}
@@ -151,6 +169,12 @@ func (ws *WebService) generatePackageData(packageName string) (*PackageData, err
 					proposedColor = "success"
 				} else {
 					proposedColor = "danger"
+					// If version is red (upstream is greater), find SRU cycle
+					if ws.sruCycles != nil && supported.DatePublished != "" && sruCycleDate == "-" {
+						if sruCycle := ws.sruCycles.GetMinimumCutoffAfterDate(supported.DatePublished); sruCycle != nil {
+							sruCycleDate = sruCycle.ReleaseDate
+						}
+					}
 				}
 			}
 		}
@@ -161,6 +185,7 @@ func (ws *WebService) generatePackageData(packageName string) (*PackageData, err
 			Proposed:        proposed,
 			UpstreamVersion: upstreamVersion,
 			ReleaseDate:     releaseDate,
+			SRUCycle:        sruCycleDate,
 			UpdatesColor:    updatesColor,
 			ProposedColor:   proposedColor,
 		})
@@ -282,6 +307,7 @@ func (ws *WebService) indexHandler(w http.ResponseWriter, r *http.Request) {
 						<th>Proposed</th>
 						<th>Upstream Version</th>
 						<th>Release Date</th>
+						<th>Next SRU Cycle</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -292,6 +318,7 @@ func (ws *WebService) indexHandler(w http.ResponseWriter, r *http.Request) {
 						<td class="{{.ProposedColor}}">{{.Proposed}}</td>
 						<td class="upstream-cell">{{.UpstreamVersion}}</td>
 						<td class="upstream-cell">{{.ReleaseDate}}</td>
+						<td class="upstream-cell">{{.SRUCycle}}</td>
 					</tr>
 					{{end}}
 				</tbody>
@@ -302,6 +329,7 @@ func (ws *WebService) indexHandler(w http.ResponseWriter, r *http.Request) {
 		<div class="footer">
 			<p>Green background indicates package version contains upstream version</p>
 			<p>Red background indicates package version does not contain upstream version</p>
+			<p>Next SRU Cycle shows the next Ubuntu kernel cycle release date for outdated (red) drivers</p>
 		</div>
 	</div>
 </body>
@@ -426,6 +454,7 @@ func (ws *WebService) packageHandler(w http.ResponseWriter, r *http.Request) {
 					<th>Proposed</th>
 					<th>Upstream Version</th>
 					<th>Release Date</th>
+					<th>Next SRU Cycle</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -436,6 +465,7 @@ func (ws *WebService) packageHandler(w http.ResponseWriter, r *http.Request) {
 					<td class="{{.ProposedColor}}">{{.Proposed}}</td>
 					<td class="upstream-cell">{{.UpstreamVersion}}</td>
 					<td class="upstream-cell">{{.ReleaseDate}}</td>
+					<td class="upstream-cell">{{.SRUCycle}}</td>
 				</tr>
 				{{end}}
 			</tbody>
