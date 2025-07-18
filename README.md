@@ -30,6 +30,8 @@ make deps
 
 ## Running
 
+### Development Mode
+
 ```bash
 # Run console application
 make run-console
@@ -44,6 +46,27 @@ make run-web
 # Run web server on custom port
 ./nvidia-web-server -addr :9090
 ```
+
+### Production Mode (Systemd Service)
+
+```bash
+# Install as systemd service
+make install-service
+
+# Start the service
+make service-start
+
+# Check service status
+make service-status
+
+# View service logs
+make service-logs
+
+# Stop the service
+make service-stop
+```
+
+For detailed service management, see [SERVICE.md](SERVICE.md).
 
 ## Web Interface
 

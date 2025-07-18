@@ -1,0 +1,42 @@
+[Unit]
+Description=NVIDIA Driver Package Status Web Server
+Documentation=https://github.com/user/nvidia-driver-monitor
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=nvidia-monitor
+Group=nvidia-monitor
+WorkingDirectory=/opt/nvidia-driver-monitor
+ExecStart=/opt/nvidia-driver-monitor/nvidia-web-server -addr :8080
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nvidia-driver-monitor
+
+# Security settings
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ReadWritePaths=/opt/nvidia-driver-monitor
+CapabilityBoundingSet=
+
+# Network settings
+IPAddressDeny=any
+IPAddressAllow=localhost
+IPAddressAllow=127.0.0.0/8
+IPAddressAllow=::1/128
+
+# Resource limits
+LimitNOFILE=1024
+MemoryMax=512M
+CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target
