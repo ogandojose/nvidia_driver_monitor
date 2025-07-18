@@ -133,6 +133,8 @@ help:
 	@echo "  service-restart  - Restart the service"
 	@echo "  service-status   - Show service status"
 	@echo "  service-logs     - Show service logs"
+	@echo "  troubleshoot-network - Run network troubleshooting"
+	@echo "  fix-network      - Fix network connectivity issues"
 	@echo ""
 	@echo "Cleanup targets:"
 	@echo "  clean            - Remove all build artifacts and temporary files"
@@ -175,6 +177,16 @@ service-status:
 service-logs:
 	@echo "Showing service logs..."
 	sudo ./service-manager.sh logs
+
+.PHONY: troubleshoot-network
+troubleshoot-network:
+	@echo "Running network troubleshooting..."
+	sudo ./troubleshoot-network.sh
+
+.PHONY: fix-network
+fix-network:
+	@echo "Applying network connectivity fix..."
+	sudo ./fix-network.sh
 
 # Show current status
 .PHONY: status

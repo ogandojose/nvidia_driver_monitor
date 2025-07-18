@@ -1,8 +1,9 @@
 [Unit]
 Description=NVIDIA Driver Package Status Web Server
 Documentation=https://github.com/user/nvidia-driver-monitor
-After=network.target
-Wants=network.target
+After=network-online.target
+Wants=network-online.target
+RequiredBy=network-online.target
 
 [Service]
 Type=simple
@@ -16,6 +17,11 @@ StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=nvidia-driver-monitor
 
+# Environment variables for network timeouts
+Environment=HTTP_TIMEOUT=30s
+Environment=DIAL_TIMEOUT=10s
+Environment=TLS_HANDSHAKE_TIMEOUT=10s
+
 # Security settings
 NoNewPrivileges=true
 ProtectSystem=strict
@@ -27,11 +33,13 @@ ProtectControlGroups=true
 ReadWritePaths=/opt/nvidia-driver-monitor
 CapabilityBoundingSet=
 
-# Network settings
-IPAddressDeny=any
-IPAddressAllow=localhost
-IPAddressAllow=127.0.0.0/8
-IPAddressAllow=::1/128
+# Network settings - Allow outbound internet access for fetching driver data
+IPAddressAllow=any
+RestrictAddressFamilies=AF_INET AF_INET6
+
+# DNS and network resolution
+PrivateNetwork=false
+SystemCallFilter=@system-service
 
 # Resource limits
 LimitNOFILE=1024

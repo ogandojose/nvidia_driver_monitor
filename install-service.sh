@@ -13,6 +13,10 @@ INSTALL_DIR="/opt/nvidia-driver-monitor"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 LOG_FILE="/var/log/${SERVICE_NAME}.log"
 
+# Service file options
+STANDARD_SERVICE_FILE="nvidia-driver-monitor.service"
+MINIMAL_SERVICE_FILE="nvidia-driver-monitor-minimal.service"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -80,7 +84,36 @@ chmod 644 "$INSTALL_DIR/supportedReleases.json"
 
 # Install systemd service file
 print_status "Installing systemd service file..."
-cp "./nvidia-driver-monitor.service" "$SERVICE_FILE"
+
+# Ask user which service file to use
+echo ""
+echo "Choose service configuration:"
+echo "1) Standard (with security hardening, may have network restrictions)"
+echo "2) Minimal (fewer security restrictions, better for internet access)"
+read -p "Enter choice [1-2]: " -n 1 -r
+echo ""
+
+case $REPLY in
+    1)
+        SERVICE_SOURCE="$STANDARD_SERVICE_FILE"
+        print_status "Using standard service configuration"
+        ;;
+    2)
+        SERVICE_SOURCE="$MINIMAL_SERVICE_FILE"
+        print_status "Using minimal service configuration"
+        ;;
+    *)
+        print_warning "Invalid choice, using standard configuration"
+        SERVICE_SOURCE="$STANDARD_SERVICE_FILE"
+        ;;
+esac
+
+if [ ! -f "./$SERVICE_SOURCE" ]; then
+    print_error "Service file $SERVICE_SOURCE not found"
+    exit 1
+fi
+
+cp "./$SERVICE_SOURCE" "$SERVICE_FILE"
 chown root:root "$SERVICE_FILE"
 chmod 644 "$SERVICE_FILE"
 
