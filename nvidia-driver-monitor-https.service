@@ -1,0 +1,54 @@
+[Unit]
+Description=NVIDIA Driver Package Status Web Server (HTTPS)
+Documentation=https://github.com/user/nvidia-driver-monitor
+After=network-online.target
+Wants=network-online.target
+RequiredBy=network-online.target
+
+[Service]
+Type=simple
+User=nvidia-monitor
+Group=nvidia-monitor
+WorkingDirectory=/opt/nvidia-driver-monitor
+ExecStart=/opt/nvidia-driver-monitor/nvidia-web-server -https -addr :8443
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nvidia-driver-monitor-https
+
+# Environment variables for network timeouts
+Environment=HTTP_TIMEOUT=30s
+Environment=DIAL_TIMEOUT=10s
+Environment=TLS_HANDSHAKE_TIMEOUT=10s
+
+# Security settings
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+PrivateDevices=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictNamespaces=true
+SystemCallFilter=@system-service
+SystemCallFilter=~@debug @mount @cpu-emulation @obsolete @privileged @reboot @swap @raw-io
+
+# Network restrictions (allow HTTPS traffic)
+RestrictAddressFamilies=AF_INET AF_INET6
+IPAddressDeny=any
+IPAddressAllow=localhost
+IPAddressAllow=127.0.0.0/8
+IPAddressAllow=::1/128
+
+# Capabilities
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

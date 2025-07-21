@@ -47,6 +47,30 @@ run-web:
 	@echo "Running web server application..."
 	go run $(WEB_SOURCE)
 
+# Run web server with HTTPS
+.PHONY: run-web-https
+run-web-https:
+	@echo "Running web server application with HTTPS..."
+	go run $(WEB_SOURCE) -https
+
+# Generate self-signed certificate
+.PHONY: generate-cert
+generate-cert:
+	@echo "Generating self-signed certificate..."
+	@if [ -f "server.crt" ] || [ -f "server.key" ]; then \
+		echo "Certificate files already exist. Use 'make clean-cert' to remove them first."; \
+	else \
+		echo "Certificates will be generated automatically when running HTTPS mode."; \
+		echo "Use 'make run-web-https' or './$(WEB_BINARY) -https' to start HTTPS server."; \
+	fi
+
+# Clean certificate files
+.PHONY: clean-cert
+clean-cert:
+	@echo "Removing certificate files..."
+	rm -f server.crt server.key
+	@echo "Certificate files removed."
+
 # Kill processes running on port 8080
 .PHONY: kill-web
 kill-web:
@@ -68,15 +92,16 @@ clean:
 	# Remove temporary files
 	-rm -f *.tmp
 	-rm -f *.log
+	# Note: Certificates are preserved (use 'make clean-cert' to remove them)
 	# Remove Go build cache (optional)
 	-go clean -cache
 	-go clean -modcache
 	@echo "Clean completed."
 
-# Development clean (keeps mod cache)
+# Development clean (keeps mod cache and certificates)
 .PHONY: clean-dev
 clean-dev:
-	@echo "Cleaning build artifacts (keeping mod cache)..."
+	@echo "Cleaning build artifacts (keeping mod cache and certificates)..."
 	# Remove built binaries
 	-rm -f $(CONSOLE_BINARY)
 	-rm -f $(WEB_BINARY)
@@ -86,6 +111,11 @@ clean-dev:
 	-rm -f *.tmp
 	-rm -f *.log
 	@echo "Development clean completed."
+
+# Full clean including certificates
+.PHONY: clean-all
+clean-all: clean clean-cert
+	@echo "Full clean completed (including certificates)."
 
 # Test the applications
 .PHONY: test
@@ -119,6 +149,9 @@ help:
 	@echo "Development targets:"
 	@echo "  run-console      - Run console application"
 	@echo "  run-web          - Run web server application"
+	@echo "  run-web-https    - Run web server application with HTTPS"
+	@echo "  generate-cert    - Generate self-signed certificate"
+	@echo "  clean-cert       - Clean certificate files"
 	@echo "  kill-web         - Kill processes running on port 8080"
 	@echo "  test             - Run tests"
 	@echo "  fmt              - Format code"
