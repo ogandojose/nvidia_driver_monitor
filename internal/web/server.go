@@ -10,11 +10,13 @@ import (
 	"encoding/pem"
 	"fmt"
 	"html/template"
+	"log"
 	"math/big"
 	"net"
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"nvidia_driver_monitor/internal/drivers"
@@ -41,12 +43,24 @@ type PackageData struct {
 	Series      []SeriesData
 }
 
+// CachedData holds all the cached package data
+type CachedData struct {
+	AllPackages   []*PackageData
+	LastUpdated   time.Time
+	IsInitialized bool
+}
+
 // WebService handles the web server functionality
 type WebService struct {
 	supportedReleases []releases.SupportedRelease
 	udaEntries        []drivers.DriverEntry
 	allBranches       drivers.AllBranches
 	sruCycles         *sru.SRUCycles
+
+	// Cache and synchronization
+	cache    *CachedData
+	cacheMux sync.RWMutex
+	stopChan chan bool
 
 	// HTTPS Configuration
 	EnableHTTPS bool
@@ -56,44 +70,123 @@ type WebService struct {
 
 // NewWebService creates a new web service instance
 func NewWebService() (*WebService, error) {
-	// Initialize the service with data
-	ws := &WebService{}
+	// Initialize the service with empty cache
+	ws := &WebService{
+		cache: &CachedData{
+			AllPackages:   make([]*PackageData, 0),
+			IsInitialized: false,
+		},
+		stopChan: make(chan bool),
+	}
+
+	// Perform initial data load
+	if err := ws.refreshData(); err != nil {
+		return nil, fmt.Errorf("failed to perform initial data load: %v", err)
+	}
+
+	// Start background data refresh goroutine
+	go ws.dataRefreshLoop()
+
+	return ws, nil
+}
+
+// refreshData fetches all data and updates the cache
+func (ws *WebService) refreshData() error {
+	log.Printf("Refreshing data...")
 
 	// Get the latest UDA releases from nvidia.com
 	udaEntries, err := drivers.GetNvidiaDriverEntries()
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to get UDA entries: %v", err)
 	}
-	ws.udaEntries = udaEntries
 
 	// Get server driver versions
 	_, allBranches, err := drivers.GetLatestServerDriverVersions()
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to get server driver versions: %v", err)
 	}
-	ws.allBranches = allBranches
 
 	// Read supported releases configuration
 	supportedReleases, err := releases.ReadSupportedReleases("supportedReleases.json")
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to read supported releases: %v", err)
 	}
 
 	// Update supported releases with latest versions
 	releases.UpdateSupportedUDAReleases(udaEntries, supportedReleases)
 	releases.UpdateSupportedReleasesWithLatestERD(allBranches, supportedReleases)
 
-	ws.supportedReleases = supportedReleases
-
 	// Fetch SRU cycles
 	sruCycles, err := sru.FetchSRUCycles()
 	if err != nil {
-		return nil, err
+		log.Printf("Warning: Failed to fetch SRU cycles: %v", err)
+		sruCycles = nil
+	} else {
+		sruCycles.AddPredictedCycles()
 	}
-	sruCycles.AddPredictedCycles()
+
+	// Update service state
+	ws.udaEntries = udaEntries
+	ws.allBranches = allBranches
+	ws.supportedReleases = supportedReleases
 	ws.sruCycles = sruCycles
 
-	return ws, nil
+	// Generate all package data
+	var allPackages []*PackageData
+	for _, release := range ws.supportedReleases {
+		packageName := "nvidia-graphics-drivers-" + release.BranchName
+		packageData, err := ws.generatePackageData(packageName)
+		if err != nil {
+			log.Printf("Error generating data for %s: %v", packageName, err)
+			continue
+		}
+		allPackages = append(allPackages, packageData)
+	}
+
+	// Update cache with write lock
+	ws.cacheMux.Lock()
+	ws.cache.AllPackages = allPackages
+	ws.cache.LastUpdated = time.Now()
+	ws.cache.IsInitialized = true
+	ws.cacheMux.Unlock()
+
+	log.Printf("Data refresh completed. Generated %d packages.", len(allPackages))
+	return nil
+}
+
+// dataRefreshLoop runs in the background and refreshes data every 5 minutes
+func (ws *WebService) dataRefreshLoop() {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			if err := ws.refreshData(); err != nil {
+				log.Printf("Background data refresh failed: %v", err)
+			}
+		case <-ws.stopChan:
+			log.Printf("Stopping data refresh loop...")
+			return
+		}
+	}
+}
+
+// Stop gracefully stops the background data refresh
+func (ws *WebService) Stop() {
+	close(ws.stopChan)
+}
+
+// getCachedPackages returns a copy of the cached package data
+func (ws *WebService) getCachedPackages() ([]*PackageData, time.Time, bool) {
+	ws.cacheMux.RLock()
+	defer ws.cacheMux.RUnlock()
+
+	// Create a deep copy to avoid race conditions
+	packages := make([]*PackageData, len(ws.cache.AllPackages))
+	copy(packages, ws.cache.AllPackages)
+
+	return packages, ws.cache.LastUpdated, ws.cache.IsInitialized
 }
 
 // generatePackageData generates the table data for a specific package
@@ -249,7 +342,7 @@ func generateSelfSignedCert(certFile, keyFile string) error {
 	// Save certificate to file
 	certOut, err := os.Create(certFile)
 	if err != nil {
-		return fmt.Errorf("failed to create cert file: %v", err)
+		return fmt.Errorf("failed to create certificate file: %v", err)
 	}
 	defer certOut.Close()
 
@@ -264,8 +357,12 @@ func generateSelfSignedCert(certFile, keyFile string) error {
 	}
 	defer keyOut.Close()
 
-	privKeyBytes := x509.MarshalPKCS1PrivateKey(priv)
-	if err := pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: privKeyBytes}); err != nil {
+	privDER, err := x509.MarshalPKCS8PrivateKey(priv)
+	if err != nil {
+		return fmt.Errorf("failed to marshal private key: %v", err)
+	}
+
+	if err := pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privDER}); err != nil {
 		return fmt.Errorf("failed to write private key: %v", err)
 	}
 
@@ -274,18 +371,12 @@ func generateSelfSignedCert(certFile, keyFile string) error {
 
 // indexHandler handles the main page request
 func (ws *WebService) indexHandler(w http.ResponseWriter, r *http.Request) {
-	var allPackages []PackageData
+	// Get cached data
+	allPackages, lastUpdated, isInitialized := ws.getCachedPackages()
 
-	// Generate package names from supported releases like main.go does
-	for _, release := range ws.supportedReleases {
-		packageName := "nvidia-graphics-drivers-" + release.BranchName
-		packageData, err := ws.generatePackageData(packageName)
-		if err != nil {
-			// Log error but continue with other packages
-			fmt.Printf("Error generating data for %s: %v\n", packageName, err)
-			continue
-		}
-		allPackages = append(allPackages, *packageData)
+	if !isInitialized {
+		http.Error(w, "Service is still initializing, please try again in a moment", http.StatusServiceUnavailable)
+		return
 	}
 
 	indexTemplate := `
@@ -298,39 +389,21 @@ func (ws *WebService) indexHandler(w http.ResponseWriter, r *http.Request) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .container-fluid { max-width: 1400px; }
-        .package-section { margin-bottom: 40px; }
-        .package-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #444;
-            margin-bottom: 15px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-left: 4px solid #007bff;
-            border-radius: 4px;
+        .table-success { background-color: #d1e7dd !important; }
+        .table-danger { background-color: #f8d7da !important; }
+        .badge { font-size: 0.9em; }
+        .package-section { margin-bottom: 3rem; }
+        .package-title { 
+            background-color: #f8f9fa; 
+            padding: 1rem; 
+            border-radius: 0.375rem; 
+            margin-bottom: 1rem;
+            border-left: 4px solid #198754;
         }
-        .table th { 
-            background-color: #e9ecef;
-            font-weight: bold;
-            color: #495057;
+        .last-updated {
+            font-size: 0.9em;
+            color: #6c757d;
         }
-        .table-success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .table-danger {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        .series-cell {
-            font-weight: bold;
-            color: #495057;
-        }
-        .upstream-cell {
-            font-weight: bold;
-            color: #007bff;
-        }
-        .badge { font-size: 0.8em; }
     </style>
 </head>
 <body>
@@ -339,16 +412,26 @@ func (ws *WebService) indexHandler(w http.ResponseWriter, r *http.Request) {
         
         <div class="alert alert-info">
             <strong>Status Legend:</strong>
-            <span class="badge bg-success ms-2">Green</span> = Up to date
+            <span class="badge bg-success ms-2">Green</span> = Up to date with upstream
             <span class="badge bg-danger ms-2">Red</span> = Outdated (shows next SRU cycle date)
         </div>
 
-        {{range .}}
+        <div class="alert alert-secondary">
+            <div class="last-updated">
+                <strong>Last Updated:</strong> {{.LastUpdated.Format "2006-01-02 15:04:05 UTC"}}
+                <small class="ms-3">(Auto-refreshes every 5 minutes)</small>
+            </div>
+        </div>
+
+        {{range .AllPackages}}
         <div class="package-section">
-            <div class="package-title">{{.PackageName}}</div>
+            <div class="package-title">
+                <h3 class="mb-0">{{.PackageName}}</h3>
+            </div>
+            
             <div class="table-responsive">
                 <table class="table table-striped table-bordered">
-                    <thead>
+                    <thead class="table-dark">
                         <tr>
                             <th>Series</th>
                             <th>Updates/Security</th>
@@ -361,16 +444,16 @@ func (ws *WebService) indexHandler(w http.ResponseWriter, r *http.Request) {
                     <tbody>
                         {{range .Series}}
                         <tr>
-                            <td class="series-cell"><strong>{{.Series}}</strong></td>
+                            <td><strong>{{.Series}}</strong></td>
                             <td class="{{if eq .UpdatesColor "success"}}table-success{{else if eq .UpdatesColor "danger"}}table-danger{{end}}">
                                 {{.UpdatesSecurity}}
                             </td>
                             <td class="{{if eq .ProposedColor "success"}}table-success{{else if eq .ProposedColor "danger"}}table-danger{{end}}">
                                 {{.Proposed}}
                             </td>
-                            <td class="upstream-cell">{{.UpstreamVersion}}</td>
-                            <td class="upstream-cell">{{.ReleaseDate}}</td>
-                            <td class="upstream-cell">
+                            <td>{{.UpstreamVersion}}</td>
+                            <td>{{.ReleaseDate}}</td>
+                            <td>
                                 {{if ne .SRUCycle "-"}}
                                     <span class="badge bg-warning text-dark">{{.SRUCycle}}</span>
                                 {{else}}
@@ -384,7 +467,7 @@ func (ws *WebService) indexHandler(w http.ResponseWriter, r *http.Request) {
             </div>
         </div>
         {{end}}
-
+        
         <div class="card mt-4">
             <div class="card-header">
                 <h5 class="card-title mb-0">API Endpoints</h5>
@@ -406,8 +489,17 @@ func (ws *WebService) indexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Create template data
+	templateData := struct {
+		AllPackages []*PackageData
+		LastUpdated time.Time
+	}{
+		AllPackages: allPackages,
+		LastUpdated: lastUpdated,
+	}
+
 	w.Header().Set("Content-Type", "text/html")
-	if err := tmpl.Execute(w, allPackages); err != nil {
+	if err := tmpl.Execute(w, templateData); err != nil {
 		http.Error(w, fmt.Sprintf("Error executing template: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -421,9 +513,24 @@ func (ws *WebService) packageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	packageData, err := ws.generatePackageData(packageName)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Error generating package data: %v", err), http.StatusInternalServerError)
+	// Check cache first for the specific package
+	allPackages, _, isInitialized := ws.getCachedPackages()
+	if !isInitialized {
+		http.Error(w, "Service is still initializing, please try again in a moment", http.StatusServiceUnavailable)
+		return
+	}
+
+	// Find the package in cache
+	var packageData *PackageData
+	for _, pkg := range allPackages {
+		if pkg.PackageName == packageName {
+			packageData = pkg
+			break
+		}
+	}
+
+	if packageData == nil {
+		http.Error(w, "Package not found", http.StatusNotFound)
 		return
 	}
 
@@ -431,7 +538,7 @@ func (ws *WebService) packageHandler(w http.ResponseWriter, r *http.Request) {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{.PackageName}} - Package Status</title>
+    <title>{{.PackageName}} - NVIDIA Driver Package Status</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -444,13 +551,6 @@ func (ws *WebService) packageHandler(w http.ResponseWriter, r *http.Request) {
 </head>
 <body>
     <div class="container-fluid mt-4">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="/">Home</a></li>
-                <li class="breadcrumb-item active">{{.PackageName}}</li>
-            </ol>
-        </nav>
-        
         <h1 class="mb-4">{{.PackageName}}</h1>
         
         <div class="alert alert-info">
@@ -522,29 +622,38 @@ func (ws *WebService) packageHandler(w http.ResponseWriter, r *http.Request) {
 // apiHandler handles JSON API requests
 func (ws *WebService) apiHandler(w http.ResponseWriter, r *http.Request) {
 	packageName := r.URL.Query().Get("package")
-	if packageName != "" {
-		// Return data for specific package
-		packageData, err := ws.generatePackageData(packageName)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Error generating package data: %v", err), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(packageData)
+
+	// Get cached data
+	allPackages, lastUpdated, isInitialized := ws.getCachedPackages()
+	if !isInitialized {
+		http.Error(w, "Service is still initializing, please try again in a moment", http.StatusServiceUnavailable)
 		return
 	}
 
-	// Return data for all packages generated from supported releases
-	allData := make(map[string]*PackageData)
-	for _, release := range ws.supportedReleases {
-		packageName := "nvidia-graphics-drivers-" + release.BranchName
-		packageData, err := ws.generatePackageData(packageName)
-		if err != nil {
-			// Log error but continue with other packages
-			fmt.Printf("Error generating data for %s: %v\n", packageName, err)
-			continue
+	if packageName != "" {
+		// Return data for specific package
+		for _, pkg := range allPackages {
+			if pkg.PackageName == packageName {
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(pkg)
+				return
+			}
 		}
-		allData[packageName] = packageData
+		http.Error(w, "Package not found", http.StatusNotFound)
+		return
+	}
+
+	// Return data for all packages
+	allData := struct {
+		Packages    map[string]*PackageData `json:"packages"`
+		LastUpdated time.Time               `json:"last_updated"`
+	}{
+		Packages:    make(map[string]*PackageData),
+		LastUpdated: lastUpdated,
+	}
+
+	for _, pkg := range allPackages {
+		allData.Packages[pkg.PackageName] = pkg
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -559,56 +668,35 @@ func (ws *WebService) Start(addr string) error {
 
 	if ws.EnableHTTPS {
 		// Check if certificates exist, generate if they don't
-		if ws.CertFile == "" || ws.KeyFile == "" {
-			// Default certificate locations
-			ws.CertFile = "server.crt"
-			ws.KeyFile = "server.key"
-		}
-
-		// Check if certificate files exist
 		if _, err := os.Stat(ws.CertFile); os.IsNotExist(err) {
-			fmt.Printf("Certificate file not found, generating self-signed certificate...\n")
+			log.Printf("Certificate file not found, generating self-signed certificate...")
 			if err := generateSelfSignedCert(ws.CertFile, ws.KeyFile); err != nil {
 				return fmt.Errorf("failed to generate certificate: %v", err)
 			}
-			fmt.Printf("Generated certificate: %s\n", ws.CertFile)
-			fmt.Printf("Generated private key: %s\n", ws.KeyFile)
+			log.Printf("Self-signed certificate generated: %s", ws.CertFile)
 		}
 
-		// Configure TLS with security best practices
+		// Create TLS config
+		cert, err := tls.LoadX509KeyPair(ws.CertFile, ws.KeyFile)
+		if err != nil {
+			return fmt.Errorf("failed to load certificate: %v", err)
+		}
+
 		tlsConfig := &tls.Config{
-			MinVersion: tls.VersionTLS12,
-			CurvePreferences: []tls.CurveID{
-				tls.CurveP256,
-				tls.X25519,
-			},
-			PreferServerCipherSuites: true,
-			CipherSuites: []uint16{
-				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-				tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
-				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-			},
+			Certificates: []tls.Certificate{cert},
 		}
 
-		// Create HTTPS server
 		server := &http.Server{
-			Addr:         addr,
-			TLSConfig:    tlsConfig,
-			ReadTimeout:  15 * time.Second,
-			WriteTimeout: 15 * time.Second,
-			IdleTimeout:  60 * time.Second,
+			Addr:      addr,
+			TLSConfig: tlsConfig,
 		}
 
-		fmt.Printf("Starting HTTPS server on %s\n", addr)
-		fmt.Printf("Certificate: %s\n", ws.CertFile)
-		fmt.Printf("Private Key: %s\n", ws.KeyFile)
-		fmt.Printf("Access the service at: https://localhost%s\n", addr)
-
-		return server.ListenAndServeTLS(ws.CertFile, ws.KeyFile)
+		log.Printf("Starting HTTPS server on %s", addr)
+		log.Printf("Access the service at: https://localhost%s", addr)
+		return server.ListenAndServeTLS("", "")
+	} else {
+		log.Printf("Starting HTTP server on %s", addr)
+		log.Printf("Access the service at: http://localhost%s", addr)
+		return http.ListenAndServe(addr, nil)
 	}
-
-	// Default HTTP server
-	fmt.Printf("Starting HTTP server on %s\n", addr)
-	fmt.Printf("Access the service at: http://localhost%s\n", addr)
-	return http.ListenAndServe(addr, nil)
 }
