@@ -274,6 +274,20 @@ func generateSelfSignedCert(certFile, keyFile string) error {
 
 // indexHandler handles the main page request
 func (ws *WebService) indexHandler(w http.ResponseWriter, r *http.Request) {
+	var allPackages []PackageData
+
+	// Generate package names from supported releases like main.go does
+	for _, release := range ws.supportedReleases {
+		packageName := "nvidia-graphics-drivers-" + release.BranchName
+		packageData, err := ws.generatePackageData(packageName)
+		if err != nil {
+			// Log error but continue with other packages
+			fmt.Printf("Error generating data for %s: %v\n", packageName, err)
+			continue
+		}
+		allPackages = append(allPackages, *packageData)
+	}
+
 	indexTemplate := `
 <!DOCTYPE html>
 <html>
@@ -284,9 +298,39 @@ func (ws *WebService) indexHandler(w http.ResponseWriter, r *http.Request) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .container-fluid { max-width: 1400px; }
+        .package-section { margin-bottom: 40px; }
+        .package-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #444;
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+        }
+        .table th { 
+            background-color: #e9ecef;
+            font-weight: bold;
+            color: #495057;
+        }
+        .table-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .table-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .series-cell {
+            font-weight: bold;
+            color: #495057;
+        }
+        .upstream-cell {
+            font-weight: bold;
+            color: #007bff;
+        }
         .badge { font-size: 0.8em; }
-        .table th { background-color: #f8f9fa; }
-        .card-header { background-color: #e9ecef; }
     </style>
 </head>
 <body>
@@ -299,38 +343,47 @@ func (ws *WebService) indexHandler(w http.ResponseWriter, r *http.Request) {
             <span class="badge bg-danger ms-2">Red</span> = Outdated (shows next SRU cycle date)
         </div>
 
-        <div class="row">
-            <div class="col-md-6 mb-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Binary Packages</h5>
-                    </div>
-                    <div class="card-body">
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item"><a href="/package?name=nvidia-graphics-drivers-550" class="text-decoration-none">nvidia-graphics-drivers-550</a></li>
-                            <li class="list-group-item"><a href="/package?name=nvidia-graphics-drivers-535" class="text-decoration-none">nvidia-graphics-drivers-535</a></li>
-                            <li class="list-group-item"><a href="/package?name=nvidia-graphics-drivers-470" class="text-decoration-none">nvidia-graphics-drivers-470</a></li>
-                            <li class="list-group-item"><a href="/package?name=nvidia-graphics-drivers-390" class="text-decoration-none">nvidia-graphics-drivers-390</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-6 mb-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Server Packages</h5>
-                    </div>
-                    <div class="card-body">
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item"><a href="/package?name=nvidia-graphics-drivers-550-server" class="text-decoration-none">nvidia-graphics-drivers-550-server</a></li>
-                            <li class="list-group-item"><a href="/package?name=nvidia-graphics-drivers-535-server" class="text-decoration-none">nvidia-graphics-drivers-535-server</a></li>
-                            <li class="list-group-item"><a href="/package?name=nvidia-graphics-drivers-470-server" class="text-decoration-none">nvidia-graphics-drivers-470-server</a></li>
-                        </ul>
-                    </div>
-                </div>
+        {{range .}}
+        <div class="package-section">
+            <div class="package-title">{{.PackageName}}</div>
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Series</th>
+                            <th>Updates/Security</th>
+                            <th>Proposed</th>
+                            <th>Upstream Version</th>
+                            <th>Release Date</th>
+                            <th>Next SRU Cycle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .Series}}
+                        <tr>
+                            <td class="series-cell"><strong>{{.Series}}</strong></td>
+                            <td class="{{if eq .UpdatesColor "success"}}table-success{{else if eq .UpdatesColor "danger"}}table-danger{{end}}">
+                                {{.UpdatesSecurity}}
+                            </td>
+                            <td class="{{if eq .ProposedColor "success"}}table-success{{else if eq .ProposedColor "danger"}}table-danger{{end}}">
+                                {{.Proposed}}
+                            </td>
+                            <td class="upstream-cell">{{.UpstreamVersion}}</td>
+                            <td class="upstream-cell">{{.ReleaseDate}}</td>
+                            <td class="upstream-cell">
+                                {{if ne .SRUCycle "-"}}
+                                    <span class="badge bg-warning text-dark">{{.SRUCycle}}</span>
+                                {{else}}
+                                    -
+                                {{end}}
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
             </div>
         </div>
+        {{end}}
 
         <div class="card mt-4">
             <div class="card-header">
@@ -347,8 +400,17 @@ func (ws *WebService) indexHandler(w http.ResponseWriter, r *http.Request) {
 </body>
 </html>`
 
+	tmpl, err := template.New("index").Parse(indexTemplate)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error parsing template: %v", err), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprint(w, indexTemplate)
+	if err := tmpl.Execute(w, allPackages); err != nil {
+		http.Error(w, fmt.Sprintf("Error executing template: %v", err), http.StatusInternalServerError)
+		return
+	}
 }
 
 // packageHandler handles requests for specific package information
@@ -472,26 +534,17 @@ func (ws *WebService) apiHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Return data for all packages
-	packages := []string{
-		"nvidia-graphics-drivers-550",
-		"nvidia-graphics-drivers-535",
-		"nvidia-graphics-drivers-470",
-		"nvidia-graphics-drivers-390",
-		"nvidia-graphics-drivers-550-server",
-		"nvidia-graphics-drivers-535-server",
-		"nvidia-graphics-drivers-470-server",
-	}
-
+	// Return data for all packages generated from supported releases
 	allData := make(map[string]*PackageData)
-	for _, pkg := range packages {
-		packageData, err := ws.generatePackageData(pkg)
+	for _, release := range ws.supportedReleases {
+		packageName := "nvidia-graphics-drivers-" + release.BranchName
+		packageData, err := ws.generatePackageData(packageName)
 		if err != nil {
 			// Log error but continue with other packages
-			fmt.Printf("Error generating data for %s: %v\n", pkg, err)
+			fmt.Printf("Error generating data for %s: %v\n", packageName, err)
 			continue
 		}
-		allData[pkg] = packageData
+		allData[packageName] = packageData
 	}
 
 	w.Header().Set("Content-Type", "application/json")
