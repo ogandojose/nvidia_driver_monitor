@@ -15,7 +15,7 @@ LOG_FILE="/var/log/${SERVICE_NAME}.log"
 
 # Service file options
 STANDARD_SERVICE_FILE="nvidia-driver-monitor.service"
-MINIMAL_SERVICE_FILE="nvidia-driver-monitor-minimal.service"
+HTTPS_SERVICE_FILE="nvidia-driver-monitor-https.service"
 
 # Colors for output
 RED='\033[0;31m'
@@ -88,23 +88,23 @@ print_status "Installing systemd service file..."
 # Ask user which service file to use
 echo ""
 echo "Choose service configuration:"
-echo "1) Standard (with security hardening, may have network restrictions)"
-echo "2) Minimal (fewer security restrictions, better for internet access)"
+echo "1) HTTPS (recommended - encrypted connection on port 8443)"
+echo "2) HTTP (standard - unencrypted connection on port 8080)"
 read -p "Enter choice [1-2]: " -n 1 -r
 echo ""
 
 case $REPLY in
     1)
-        SERVICE_SOURCE="$STANDARD_SERVICE_FILE"
-        print_status "Using standard service configuration"
+        SERVICE_SOURCE="$HTTPS_SERVICE_FILE"
+        print_status "Using HTTPS service configuration"
         ;;
     2)
-        SERVICE_SOURCE="$MINIMAL_SERVICE_FILE"
-        print_status "Using minimal service configuration"
+        SERVICE_SOURCE="$STANDARD_SERVICE_FILE"
+        print_status "Using HTTP service configuration"
         ;;
     *)
-        print_warning "Invalid choice, using standard configuration"
-        SERVICE_SOURCE="$STANDARD_SERVICE_FILE"
+        print_warning "Invalid choice, using HTTPS configuration (recommended)"
+        SERVICE_SOURCE="$HTTPS_SERVICE_FILE"
         ;;
 esac
 
@@ -140,7 +140,15 @@ echo "  Restart service: sudo systemctl restart $SERVICE_NAME"
 echo "  Check status:    sudo systemctl status $SERVICE_NAME"
 echo "  View logs:       sudo journalctl -u $SERVICE_NAME -f"
 echo ""
-echo "Web interface will be available at: http://localhost:8080"
+
+# Display appropriate URL based on service type
+if [ "$SERVICE_SOURCE" = "$HTTPS_SERVICE_FILE" ]; then
+    echo "Web interface will be available at: https://localhost:8443"
+    echo "Note: HTTPS uses a self-signed certificate. Your browser may show a security warning."
+else
+    echo "Web interface will be available at: http://localhost:8080"
+fi
+
 echo "Service user: $SERVICE_USER"
 echo "Install directory: $INSTALL_DIR"
 echo ""

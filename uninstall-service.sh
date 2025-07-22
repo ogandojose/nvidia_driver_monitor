@@ -12,6 +12,13 @@ INSTALL_DIR="/opt/nvidia-driver-monitor"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 LOG_FILE="/var/log/${SERVICE_NAME}.log"
 
+# Additional service files that might exist from older installations
+ADDITIONAL_SERVICE_FILES=(
+    "/etc/systemd/system/${SERVICE_NAME}-minimal.service"
+    "/etc/systemd/system/${SERVICE_NAME}-https.service"
+    "/etc/systemd/system/${SERVICE_NAME}-standard.service"
+)
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -39,22 +46,53 @@ fi
 
 print_status "Starting NVIDIA Driver Monitor service uninstallation..."
 
-# Stop and disable the service
-if systemctl is-active --quiet "$SERVICE_NAME"; then
-    print_status "Stopping service..."
-    systemctl stop "$SERVICE_NAME"
-fi
+# Stop and disable any running services
+services_to_check=(
+    "$SERVICE_NAME"
+    "${SERVICE_NAME}-minimal"
+    "${SERVICE_NAME}-https"
+    "${SERVICE_NAME}-standard"
+)
 
-if systemctl is-enabled --quiet "$SERVICE_NAME"; then
-    print_status "Disabling service..."
-    systemctl disable "$SERVICE_NAME"
-fi
+for service in "${services_to_check[@]}"; do
+    if systemctl is-active --quiet "$service" 2>/dev/null; then
+        print_status "Stopping service: $service"
+        systemctl stop "$service"
+    fi
+    
+    if systemctl is-enabled --quiet "$service" 2>/dev/null; then
+        print_status "Disabling service: $service"
+        systemctl disable "$service"
+    fi
+done
 
-# Remove systemd service file
+# Remove systemd service files
+print_status "Removing systemd service files..."
+service_files_removed=0
+
+# Remove main service file
 if [ -f "$SERVICE_FILE" ]; then
-    print_status "Removing systemd service file..."
+    print_status "Removing main service file: $SERVICE_FILE"
     rm -f "$SERVICE_FILE"
+    service_files_removed=$((service_files_removed + 1))
+fi
+
+# Remove any additional service files from older installations
+for service_file in "${ADDITIONAL_SERVICE_FILES[@]}"; do
+    if [ -f "$service_file" ]; then
+        print_status "Removing additional service file: $service_file"
+        rm -f "$service_file"
+        service_files_removed=$((service_files_removed + 1))
+    fi
+done
+
+# Reload systemd daemon if any service files were removed
+if [ $service_files_removed -gt 0 ]; then
+    print_status "Reloading systemd daemon..."
     systemctl daemon-reload
+    print_status "Removed $service_files_removed service file(s)"
+else
+    print_warning "No service files found to remove"
 fi
 
 # Remove installation directory
