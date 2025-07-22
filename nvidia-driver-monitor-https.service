@@ -36,15 +36,14 @@ RestrictSUIDSGID=true
 LockPersonality=true
 MemoryDenyWriteExecute=true
 RestrictNamespaces=true
-SystemCallFilter=@system-service
+SystemCallFilter=@system-service @network-io
 SystemCallFilter=~@debug @mount @cpu-emulation @obsolete @privileged @reboot @swap @raw-io
 
-# Network restrictions (allow HTTPS traffic)
+# Network restrictions (allow HTTPS traffic to external sites)
 RestrictAddressFamilies=AF_INET AF_INET6
-IPAddressDeny=any
-IPAddressAllow=localhost
-IPAddressAllow=127.0.0.0/8
-IPAddressAllow=::1/128
+# Allow outbound connections to fetch NVIDIA data
+# IPAddressDeny and IPAddressAllow removed to allow external internet access
+PrivateNetwork=false
 
 # Capabilities
 CapabilityBoundingSet=CAP_NET_BIND_SERVICE
