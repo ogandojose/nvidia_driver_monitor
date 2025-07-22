@@ -82,6 +82,35 @@ chown "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR/supportedReleases.json"
 chmod 755 "$INSTALL_DIR/nvidia-web-server"
 chmod 644 "$INSTALL_DIR/supportedReleases.json"
 
+# Function to generate self-signed certificate
+generate_certificate() {
+    local cert_file="$INSTALL_DIR/server.crt"
+    local key_file="$INSTALL_DIR/server.key"
+    
+    print_status "Generating self-signed SSL certificate..."
+    
+    # Check if openssl is available
+    if ! command -v openssl &> /dev/null; then
+        print_error "OpenSSL is required to generate certificates. Please install openssl package."
+        exit 1
+    fi
+    
+    # Generate private key and certificate
+    openssl req -x509 -newkey rsa:4096 -keyout "$key_file" -out "$cert_file" \
+        -days 365 -nodes -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost" \
+        2>/dev/null
+    
+    if [ $? -eq 0 ]; then
+        chown "$SERVICE_USER:$SERVICE_GROUP" "$cert_file" "$key_file"
+        chmod 600 "$key_file"  # Private key should be readable only by owner
+        chmod 644 "$cert_file"  # Certificate can be world-readable
+        print_status "SSL certificate generated successfully"
+    else
+        print_error "Failed to generate SSL certificate"
+        exit 1
+    fi
+}
+
 # Install systemd service file
 print_status "Installing systemd service file..."
 
@@ -97,6 +126,7 @@ case $REPLY in
     1)
         SERVICE_SOURCE="$HTTPS_SERVICE_FILE"
         print_status "Using HTTPS service configuration"
+        generate_certificate
         ;;
     2)
         SERVICE_SOURCE="$STANDARD_SERVICE_FILE"
@@ -105,6 +135,7 @@ case $REPLY in
     *)
         print_warning "Invalid choice, using HTTPS configuration (recommended)"
         SERVICE_SOURCE="$HTTPS_SERVICE_FILE"
+        generate_certificate
         ;;
 esac
 

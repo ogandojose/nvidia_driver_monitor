@@ -10,7 +10,7 @@ Type=simple
 User=nvidia-monitor
 Group=nvidia-monitor
 WorkingDirectory=/opt/nvidia-driver-monitor
-ExecStart=/opt/nvidia-driver-monitor/nvidia-web-server -https -addr :8443
+ExecStart=/opt/nvidia-driver-monitor/nvidia-web-server -https -addr :8443 -cert /opt/nvidia-driver-monitor/server.crt -key /opt/nvidia-driver-monitor/server.key
 Restart=always
 RestartSec=10
 StandardOutput=journal
@@ -25,6 +25,7 @@ Environment=TLS_HANDSHAKE_TIMEOUT=10s
 # Security settings
 NoNewPrivileges=true
 ProtectSystem=strict
+ReadWritePaths=/opt/nvidia-driver-monitor
 ProtectHome=true
 PrivateTmp=true
 ProtectKernelTunables=true

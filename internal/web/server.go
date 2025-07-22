@@ -668,12 +668,15 @@ func (ws *WebService) Start(addr string) error {
 
 	if ws.EnableHTTPS {
 		// Check if certificates exist, generate if they don't
+		log.Printf("Checking for certificates: cert=%s, key=%s", ws.CertFile, ws.KeyFile)
 		if _, err := os.Stat(ws.CertFile); os.IsNotExist(err) {
-			log.Printf("Certificate file not found, generating self-signed certificate...")
+			log.Printf("Certificate file not found at %s, generating self-signed certificate...", ws.CertFile)
 			if err := generateSelfSignedCert(ws.CertFile, ws.KeyFile); err != nil {
 				return fmt.Errorf("failed to generate certificate: %v", err)
 			}
 			log.Printf("Self-signed certificate generated: %s", ws.CertFile)
+		} else {
+			log.Printf("Using existing certificate: %s", ws.CertFile)
 		}
 
 		// Create TLS config
