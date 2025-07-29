@@ -242,6 +242,11 @@ func FetchKernelLRMDataDebug(routing string) (*LRMVerifierData, error) {
 	}, nil
 }
 
+// FetchKernelLRMDataForAllRoutings fetches LRM data for all available routings
+func FetchKernelLRMDataForAllRoutings() (*LRMVerifierData, error) {
+	return FetchKernelLRMData("") // Empty routing means get all
+}
+
 // fetchLatestVersions queries Launchpad API for latest package versions and NVIDIA drivers
 func fetchLatestVersions(kernels []KernelLRMResult) ([]KernelLRMResult, error) {
 	const maxConcurrency = 5
@@ -931,4 +936,49 @@ func generateNvidiaDriverStatuses(nvidiaDrivers []string, dkmsVersions map[strin
 	}
 
 	return statuses
+}
+
+// GetAvailableRoutings fetches all available routing values from kernel-series.yaml
+func GetAvailableRoutings() ([]string, error) {
+	log.Printf("Fetching available routings from kernel-series.yaml...")
+
+	// Download kernel-series.yaml
+	resp, err := http.Get(KernelSeriesURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download kernel-series.yaml: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %v", err)
+	}
+
+	// Parse YAML
+	var kernelSeries KernelSeries
+	if err := yaml.Unmarshal(body, &kernelSeries); err != nil {
+		return nil, fmt.Errorf("failed to parse kernel-series.yaml: %v", err)
+	}
+
+	// Collect all unique routing values
+	routingSet := make(map[string]bool)
+	for _, seriesInfo := range kernelSeries {
+		for _, sourceInfo := range seriesInfo.Sources {
+			if sourceInfo.Routing != "" {
+				routingSet[sourceInfo.Routing] = true
+			}
+		}
+	}
+
+	// Convert to sorted slice
+	var routings []string
+	for routing := range routingSet {
+		routings = append(routings, routing)
+	}
+	
+	// Sort for consistent ordering
+	sort.Strings(routings)
+	
+	log.Printf("Found %d unique routings: %v", len(routings), routings)
+	return routings, nil
 }

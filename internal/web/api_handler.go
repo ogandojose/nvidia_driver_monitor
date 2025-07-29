@@ -37,7 +37,7 @@ func (h *APIHandler) LRMDataHandler(w http.ResponseWriter, r *http.Request) {
 	offset := r.URL.Query().Get("offset")
 
 	// Fetch LRM data
-	lrmData, err := lrm.FetchKernelLRMData("ubuntu/4")
+	lrmData, err := lrm.FetchKernelLRMDataForAllRoutings()
 	if err != nil {
 		http.Error(w, `{"error": "Failed to fetch LRM data"}`, http.StatusInternalServerError)
 		return
@@ -91,6 +91,37 @@ func (h *APIHandler) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewEncoder(w).Encode(health); err != nil {
+		http.Error(w, `{"error": "Failed to encode response"}`, http.StatusInternalServerError)
+		return
+	}
+}
+
+// RoutingsHandler returns available routing values
+func (h *APIHandler) RoutingsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	// Get available routings
+	routings, err := lrm.GetAvailableRoutings()
+	if err != nil {
+		http.Error(w, `{"error": "Failed to fetch routing data"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Create response
+	response := map[string]interface{}{
+		"routings": routings,
+		"count":    len(routings),
+	}
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, `{"error": "Failed to encode response"}`, http.StatusInternalServerError)
 		return
 	}

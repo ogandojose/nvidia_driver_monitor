@@ -30,7 +30,7 @@ func (h *LRMHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Expires", "0")
 
 	var lrmData *lrm.LRMVerifierData
-	if realData, fetchErr := lrm.FetchKernelLRMData("ubuntu/4"); fetchErr != nil {
+	if realData, fetchErr := lrm.FetchKernelLRMDataForAllRoutings(); fetchErr != nil {
 		// Fallback to generating data from supported releases if available
 		lrmData = &lrm.LRMVerifierData{
 			KernelResults: []lrm.KernelLRMResult{},

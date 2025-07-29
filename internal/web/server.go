@@ -716,6 +716,7 @@ func (ws *WebService) Start(addr string) error {
 		// New API endpoints
 		http.Handle("/api/lrm", rateLimiter.Middleware(http.HandlerFunc(apiHandler.LRMDataHandler)))
 		http.Handle("/api/health", rateLimiter.Middleware(http.HandlerFunc(apiHandler.HealthHandler)))
+		http.Handle("/api/routings", rateLimiter.Middleware(http.HandlerFunc(apiHandler.RoutingsHandler)))
 	} else {
 		http.HandleFunc("/", ws.indexHandler)
 		http.HandleFunc("/package", ws.packageHandler)
@@ -725,6 +726,7 @@ func (ws *WebService) Start(addr string) error {
 		// New API endpoints
 		http.HandleFunc("/api/lrm", apiHandler.LRMDataHandler)
 		http.HandleFunc("/api/health", apiHandler.HealthHandler)
+		http.HandleFunc("/api/routings", apiHandler.RoutingsHandler)
 	}
 
 	if ws.EnableHTTPS {

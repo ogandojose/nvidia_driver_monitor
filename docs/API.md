@@ -40,9 +40,29 @@ Returns Linux Restricted Modules (LRM) verification data with detailed driver in
 |-----------|------|-------------|---------|
 | `series` | string | Filter by Ubuntu series | `22.04` |
 | `status` | string | Filter by support status | `SUPPORTED`, `LTS`, `DEV` |
-| `routing` | string | Filter by routing | `ubuntu/4` |
+| `routing` | string | Filter by routing | `ubuntu/4`, `pro/3` |
 | `limit` | integer | Limit number of results | `10` |
 | `offset` | integer | Offset for pagination | `20` |
+
+### Available Routings
+
+**GET** `/api/routings`
+
+Returns all available routing values from the kernel-series.yaml data.
+
+**Response:**
+```json
+{
+  "routings": [
+    "ubuntu/4",
+    "pro/3", 
+    "azure-6.8-ubuntu/4",
+    "fips-pro/3",
+    "realtime-pro/3"
+  ],
+  "count": 57
+}
+```
 
 **Examples:**
 
@@ -58,6 +78,12 @@ curl "http://localhost:8080/api/lrm?status=SUPPORTED&limit=5&offset=0"
 
 # Get kernels with specific routing
 curl "http://localhost:8080/api/lrm?routing=ubuntu/4"
+
+# Get available routings
+curl "http://localhost:8080/api/routings"
+
+# Combine filters
+curl "http://localhost:8080/api/lrm?series=22.04&routing=pro/3&status=SUPPORTED"
 ```
 
 **Response:**

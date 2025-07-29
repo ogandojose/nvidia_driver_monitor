@@ -3,6 +3,7 @@ package web
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -80,6 +81,32 @@ func TestAPIHandler(t *testing.T) {
 
 	if w.Header().Get("Content-Type") != "application/json" {
 		t.Errorf("Expected Content-Type application/json, got %s", w.Header().Get("Content-Type"))
+	}
+}
+
+func TestRoutingsHandler(t *testing.T) {
+	apiHandler := NewAPIHandler()
+
+	// Test routings endpoint
+	req := httptest.NewRequest("GET", "/api/routings", nil)
+	w := httptest.NewRecorder()
+	apiHandler.RoutingsHandler(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", w.Code)
+	}
+
+	if w.Header().Get("Content-Type") != "application/json" {
+		t.Errorf("Expected Content-Type application/json, got %s", w.Header().Get("Content-Type"))
+	}
+
+	// Check if response contains expected structure
+	body := w.Body.String()
+	if !strings.Contains(body, "routings") {
+		t.Error("Response should contain 'routings' field")
+	}
+	if !strings.Contains(body, "count") {
+		t.Error("Response should contain 'count' field")
 	}
 }
 
