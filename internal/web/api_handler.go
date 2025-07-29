@@ -2,6 +2,7 @@ package web
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -36,12 +37,16 @@ func (h *APIHandler) LRMDataHandler(w http.ResponseWriter, r *http.Request) {
 	limit := r.URL.Query().Get("limit")
 	offset := r.URL.Query().Get("offset")
 
-	// Fetch LRM data
-	lrmData, err := lrm.FetchKernelLRMDataForAllRoutings()
+	// Fetch LRM data - use cached version to avoid refetching if less than 5 minutes old
+	lrmData, err := lrm.GetCachedLRMData()
 	if err != nil {
 		http.Error(w, `{"error": "Failed to fetch LRM data"}`, http.StatusInternalServerError)
 		return
 	}
+
+	// Debug logging
+	log.Printf("API Handler - Debug function returned %d kernels, TotalKernels: %d, SupportedLRM: %d",
+		len(lrmData.KernelResults), lrmData.TotalKernels, lrmData.SupportedLRM)
 
 	// Apply filters
 	filteredResults := lrmData.KernelResults
@@ -84,9 +89,9 @@ func (h *APIHandler) LRMDataHandler(w http.ResponseWriter, r *http.Request) {
 // HealthHandler returns health status
 func (h *APIHandler) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	
+
 	health := map[string]interface{}{
-		"status": "healthy",
+		"status":  "healthy",
 		"service": "nvidia-driver-monitor",
 	}
 

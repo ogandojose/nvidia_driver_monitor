@@ -63,7 +63,7 @@ func main() {
 		fmt.Printf("Server will be available at http://localhost%s\n", *addr)
 	}
 
-	fmt.Printf("Configuration loaded: Rate limit: %d req/min, Cache refresh: %v\n", 
+	fmt.Printf("Configuration loaded: Rate limit: %d req/min, Cache refresh: %v\n",
 		cfg.RateLimit.RequestsPerMinute, cfg.Cache.RefreshInterval)
 	fmt.Printf("Initializing data... This may take a moment...\n")
 

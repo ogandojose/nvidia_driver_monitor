@@ -20,7 +20,7 @@ type KernelLRMResult struct {
 	LatestLRMVersion     string
 	SourceVersion        string
 	NvidiaDriverVersions []string
-	NvidiaDriversFromDSC []string  // New field to store actual driver versions from DSC files
+	NvidiaDriversFromDSC []string          // New field to store actual driver versions from DSC files
 	DKMSVersions         map[string]string // DKMS package versions for this kernel's series
 	UpdateStatus         string
 	NvidiaDriverStatuses []NvidiaDriverStatus // Individual driver statuses with detailed info
@@ -100,9 +100,9 @@ type LaunchpadResponse struct {
 
 // NvidiaDriverStatus represents the status of an individual NVIDIA driver
 type NvidiaDriverStatus struct {
-	DriverName    string // e.g., "nvidia-graphics-drivers-535"
-	DSCVersion    string // Version from DSC file
-	DKMSVersion   string // Version from DKMS/Updates-Security
-	Status        string // "✅ Up to date", "🔄 Update available", "⚠️ Unknown"
-	FullString    string // Full driver string with version for display
+	DriverName  string // e.g., "nvidia-graphics-drivers-535"
+	DSCVersion  string // Version from DSC file
+	DKMSVersion string // Version from DKMS/Updates-Security
+	Status      string // "✅ Up to date", "🔄 Update available", "⚠️ Unknown"
+	FullString  string // Full driver string with version for display
 }

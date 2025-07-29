@@ -94,8 +94,8 @@
       "noble": true,
       "plucky": true
     },
-    "current_upstream_version": "575.64.03",
-    "date_published": "2025-07-01"
+    "current_upstream_version": "575.64.05",
+    "date_published": "2025-07-22"
   },
   {
     "branch_name": "575-server",

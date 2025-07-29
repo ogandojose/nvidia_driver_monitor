@@ -9,15 +9,15 @@ import (
 
 // Config holds all configuration for the application
 type Config struct {
-	Server   ServerConfig   `json:"server"`
-	Cache    CacheConfig    `json:"cache"`
+	Server    ServerConfig    `json:"server"`
+	Cache     CacheConfig     `json:"cache"`
 	RateLimit RateLimitConfig `json:"rate_limit"`
 }
 
 // ServerConfig holds server-related configuration
 type ServerConfig struct {
-	Port     int  `json:"port"`
-	HTTPSPort int `json:"https_port"`
+	Port        int  `json:"port"`
+	HTTPSPort   int  `json:"https_port"`
 	EnableHTTPS bool `json:"enable_https"`
 }
 
@@ -32,12 +32,12 @@ func (c *CacheConfig) GetRefreshInterval() time.Duration {
 	if c.RefreshInterval == "" {
 		return 15 * time.Minute // default
 	}
-	
+
 	duration, err := time.ParseDuration(c.RefreshInterval)
 	if err != nil {
 		return 15 * time.Minute // fallback to default
 	}
-	
+
 	return duration
 }
 
@@ -69,7 +69,7 @@ func DefaultConfig() *Config {
 // LoadConfig loads configuration from a file
 func LoadConfig(configPath string) (*Config, error) {
 	config := DefaultConfig()
-	
+
 	if configPath == "" {
 		return config, nil
 	}

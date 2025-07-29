@@ -11,8 +11,8 @@ import (
 
 // LRMHandler handles the L-R-M verifier page
 type LRMHandler struct {
-	templatePath       string
-	supportedReleases  interface{} // TODO: Define proper type
+	templatePath      string
+	supportedReleases interface{} // TODO: Define proper type
 }
 
 // NewLRMHandler creates a new LRM handler
@@ -30,7 +30,7 @@ func (h *LRMHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Expires", "0")
 
 	var lrmData *lrm.LRMVerifierData
-	if realData, fetchErr := lrm.FetchKernelLRMDataForAllRoutings(); fetchErr != nil {
+	if realData, fetchErr := lrm.GetCachedLRMData(); fetchErr != nil {
 		// Fallback to generating data from supported releases if available
 		lrmData = &lrm.LRMVerifierData{
 			KernelResults: []lrm.KernelLRMResult{},
@@ -45,7 +45,7 @@ func (h *LRMHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Load and parse template
 	templateFile := filepath.Join(h.templatePath, "lrm_verifier.html")
 	tmpl := template.New("lrm_verifier.html").Funcs(TemplateFunctions())
-	
+
 	var err error
 	tmpl, err = tmpl.ParseFiles(templateFile)
 	if err != nil {

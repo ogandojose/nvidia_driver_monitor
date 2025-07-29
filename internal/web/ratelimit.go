@@ -10,7 +10,7 @@ import (
 type RateLimiter struct {
 	visitors map[string]*visitor
 	mu       sync.RWMutex
-	rate     int           // requests per minute
+	rate     int // requests per minute
 	enabled  bool
 }
 
@@ -101,12 +101,12 @@ func getClientIP(r *http.Request) string {
 	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 		return xff
 	}
-	
+
 	// Check X-Real-IP header
 	if xri := r.Header.Get("X-Real-IP"); xri != "" {
 		return xri
 	}
-	
+
 	// Fall back to remote address
 	return r.RemoteAddr
 }

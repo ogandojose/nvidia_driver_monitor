@@ -12,8 +12,16 @@ import (
 	"sync"
 	"time"
 
-	"gopkg.in/yaml.v3"
 	"nvidia_driver_monitor/internal/packages"
+
+	"gopkg.in/yaml.v3"
+)
+
+// Global cache for LRM data
+var (
+	lrmCache    *LRMVerifierData
+	lrmCacheMux sync.RWMutex
+	cacheExpiry = 5 * time.Minute // Cache expiry duration - changed from 15 to 5 minutes
 )
 
 const (
@@ -197,7 +205,7 @@ func FetchKernelLRMDataDebug(routing string) (*LRMVerifierData, error) {
 			// Find L-R-M packages in this source
 			var lrmPackages []string
 			for pkgName, pkgInfo := range sourceInfo.Packages {
-				if strings.HasPrefix(pkgName, "linux-restricted-modules-") && pkgInfo.Type == "main" {
+				if pkgInfo.Type == "lrm" {
 					lrmPackages = append(lrmPackages, pkgName)
 				}
 			}
@@ -232,19 +240,36 @@ func FetchKernelLRMDataDebug(routing string) (*LRMVerifierData, error) {
 
 	log.Printf("Processed %d total sources, found %d kernels", totalSources, len(allKernels))
 
+	// Fetch latest versions and NVIDIA driver information for all kernels
+	log.Printf("Fetching latest versions and NVIDIA driver information...")
+	processedKernels, err := fetchLatestVersions(allKernels)
+	if err != nil {
+		log.Printf("Warning: Failed to fetch latest versions: %v", err)
+		// Continue with basic data if version fetching fails
+		processedKernels = allKernels
+	}
+
 	// Return ALL kernels (no filtering)
+	// But calculate correct SupportedLRM count
+	supportedLRMCount := 0
+	for _, kernel := range processedKernels {
+		if kernel.Supported && kernel.HasLRM {
+			supportedLRMCount++
+		}
+	}
+
 	return &LRMVerifierData{
-		KernelResults: allKernels,
+		KernelResults: processedKernels,
 		LastUpdated:   time.Now(),
 		IsInitialized: true,
-		TotalKernels:  len(allKernels),
-		SupportedLRM:  len(allKernels), // For debug, just use total count
+		TotalKernels:  len(processedKernels),
+		SupportedLRM:  supportedLRMCount,
 	}, nil
 }
 
 // FetchKernelLRMDataForAllRoutings fetches LRM data for all available routings
 func FetchKernelLRMDataForAllRoutings() (*LRMVerifierData, error) {
-	return FetchKernelLRMData("") // Empty routing means get all
+	return GetCachedLRMData()
 }
 
 // fetchLatestVersions queries Launchpad API for latest package versions and NVIDIA drivers
@@ -281,7 +306,7 @@ func fetchLatestVersions(kernels []KernelLRMResult) ([]KernelLRMResult, error) {
 			mu.Unlock()
 
 			// Get NVIDIA driver versions for this kernel from DSC files
-			if kernel.LatestLRMVersion != "N/A" && kernel.LatestLRMVersion != "ERROR" {
+			if kernel.LatestLRMVersion != "N/A" && kernel.LatestLRMVersion != "ERROR" && len(kernel.LRMPackages) > 0 {
 				driverVersions := generateNvidiaDriverVersions(kernel.LRMPackages[0], kernel.LatestLRMVersion, kernel.Codename)
 				mu.Lock()
 				kernel.NvidiaDriverVersions = driverVersions
@@ -316,7 +341,7 @@ func fetchLatestVersions(kernels []KernelLRMResult) ([]KernelLRMResult, error) {
 		dkmsWg.Add(1)
 		go func(packageName string) {
 			defer dkmsWg.Done()
-			
+
 			// Use the same function as the main dashboard to get DKMS versions
 			sourceVersions, err := packages.GetMaxSourceVersionsArchive(packageName)
 			if err != nil {
@@ -327,7 +352,7 @@ func fetchLatestVersions(kernels []KernelLRMResult) ([]KernelLRMResult, error) {
 			// Extract Updates/Security versions for each series (same logic as main dashboard)
 			seriesList := []string{"questing", "plucky", "noble", "jammy", "focal", "bionic"}
 			packageVersions := make(map[string]string)
-			
+
 			for _, series := range seriesList {
 				if pocket, exists := sourceVersions.VersionMap[series]; exists {
 					if pocket.UpdatesSecurity.String() != "" {
@@ -352,7 +377,7 @@ func fetchLatestVersions(kernels []KernelLRMResult) ([]KernelLRMResult, error) {
 	for i := range kernels {
 		kernel := &kernels[i]
 		kernel.DKMSVersions = make(map[string]string)
-		
+
 		// For each NVIDIA driver in this kernel, get the corresponding DKMS version
 		for _, driverStr := range kernel.NvidiaDriverVersions {
 			if strings.Contains(driverStr, "=") {
@@ -868,7 +893,7 @@ func generateUpdateStatus(nvidiaDrivers []string, dkmsVersions map[string]string
 		dkmsVersionParts := strings.Fields(dkmsVersion)
 		if len(dkmsVersionParts) > 0 {
 			dkmsVersionClean := dkmsVersionParts[0]
-			
+
 			// Compare versions
 			if currentVersion == dkmsVersionClean {
 				upToDateCount++
@@ -907,12 +932,12 @@ func generateNvidiaDriverStatuses(nvidiaDrivers []string, dkmsVersions map[strin
 
 		driverName := parts[0]
 		dscVersion := parts[1]
-		
+
 		status := NvidiaDriverStatus{
-			DriverName:  driverName,
-			DSCVersion:  dscVersion,
-			FullString:  driverStr,
-			Status:      "⚠️ Unknown",
+			DriverName: driverName,
+			DSCVersion: dscVersion,
+			FullString: driverStr,
+			Status:     "⚠️ Unknown",
 		}
 
 		// Find the corresponding DKMS version
@@ -922,7 +947,7 @@ func generateNvidiaDriverStatuses(nvidiaDrivers []string, dkmsVersions map[strin
 			if len(dkmsVersionParts) > 0 {
 				dkmsVersionClean := dkmsVersionParts[0]
 				status.DKMSVersion = dkmsVersionClean
-				
+
 				// Compare versions
 				if dscVersion == dkmsVersionClean {
 					status.Status = "✅ Up to date"
@@ -975,10 +1000,60 @@ func GetAvailableRoutings() ([]string, error) {
 	for routing := range routingSet {
 		routings = append(routings, routing)
 	}
-	
+
 	// Sort for consistent ordering
 	sort.Strings(routings)
-	
+
 	log.Printf("Found %d unique routings: %v", len(routings), routings)
 	return routings, nil
+}
+
+// InitializeLRMCache initializes the LRM cache at startup
+func InitializeLRMCache() error {
+	log.Printf("Initializing LRM cache...")
+	data, err := fetchLRMDataInternal()
+	if err != nil {
+		return fmt.Errorf("failed to initialize LRM cache: %v", err)
+	}
+
+	lrmCacheMux.Lock()
+	lrmCache = data
+	lrmCacheMux.Unlock()
+
+	log.Printf("LRM cache initialized successfully with %d kernel results", len(data.KernelResults))
+	return nil
+}
+
+// GetCachedLRMData returns cached LRM data or fetches fresh data if cache is expired
+func GetCachedLRMData() (*LRMVerifierData, error) {
+	lrmCacheMux.RLock()
+	if lrmCache != nil && time.Since(lrmCache.LastUpdated) < cacheExpiry {
+		defer lrmCacheMux.RUnlock()
+		return lrmCache, nil
+	}
+	lrmCacheMux.RUnlock()
+
+	// Cache is expired or doesn't exist, refresh it
+	return refreshLRMCache()
+}
+
+// refreshLRMCache refreshes the LRM cache
+func refreshLRMCache() (*LRMVerifierData, error) {
+	log.Printf("Refreshing LRM cache...")
+	data, err := fetchLRMDataInternal()
+	if err != nil {
+		return nil, fmt.Errorf("failed to refresh LRM cache: %v", err)
+	}
+
+	lrmCacheMux.Lock()
+	lrmCache = data
+	lrmCacheMux.Unlock()
+
+	log.Printf("LRM cache refreshed successfully with %d kernel results", len(data.KernelResults))
+	return data, nil
+}
+
+// fetchLRMDataInternal is the internal function that actually fetches the data
+func fetchLRMDataInternal() (*LRMVerifierData, error) {
+	return FetchKernelLRMData("") // Empty routing means get all
 }

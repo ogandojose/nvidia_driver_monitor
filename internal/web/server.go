@@ -70,8 +70,8 @@ type WebService struct {
 	KeyFile     string
 
 	// Additional configuration
-	config        *config.Config
-	templatePath  string
+	config       *config.Config
+	templatePath string
 }
 
 // NewWebService creates a new web service instance
@@ -90,6 +90,12 @@ func NewWebService() (*WebService, error) {
 		return nil, fmt.Errorf("failed to perform initial data load: %v", err)
 	}
 
+	// Initialize LRM cache
+	if err := lrm.InitializeLRMCache(); err != nil {
+		log.Printf("Warning: Failed to initialize LRM cache: %v", err)
+		// Don't fail startup, just log the warning
+	}
+
 	// Start background data refresh goroutine
 	go ws.dataRefreshLoop()
 
@@ -104,14 +110,20 @@ func NewWebServiceWithConfig(cfg *config.Config, templatePath string) (*WebServi
 			AllPackages:   make([]*PackageData, 0),
 			IsInitialized: false,
 		},
-		stopChan: make(chan bool),
-		config:   cfg,
+		stopChan:     make(chan bool),
+		config:       cfg,
 		templatePath: templatePath,
 	}
 
 	// Perform initial data load
 	if err := ws.refreshData(); err != nil {
 		return nil, fmt.Errorf("failed to perform initial data load: %v", err)
+	}
+
+	// Initialize LRM cache
+	if err := lrm.InitializeLRMCache(); err != nil {
+		log.Printf("Warning: Failed to initialize LRM cache: %v", err)
+		// Don't fail startup, just log the warning
 	}
 
 	// Start background data refresh goroutine with configured interval
@@ -712,7 +724,7 @@ func (ws *WebService) Start(addr string) error {
 		http.Handle("/package", rateLimiter.Middleware(http.HandlerFunc(ws.packageHandler)))
 		http.Handle("/api", rateLimiter.Middleware(http.HandlerFunc(ws.apiHandler)))
 		http.Handle("/l-r-m-verifier", rateLimiter.Middleware(lrmHandler))
-		
+
 		// New API endpoints
 		http.Handle("/api/lrm", rateLimiter.Middleware(http.HandlerFunc(apiHandler.LRMDataHandler)))
 		http.Handle("/api/health", rateLimiter.Middleware(http.HandlerFunc(apiHandler.HealthHandler)))
@@ -722,7 +734,7 @@ func (ws *WebService) Start(addr string) error {
 		http.HandleFunc("/package", ws.packageHandler)
 		http.HandleFunc("/api", ws.apiHandler)
 		http.Handle("/l-r-m-verifier", lrmHandler)
-		
+
 		// New API endpoints
 		http.HandleFunc("/api/lrm", apiHandler.LRMDataHandler)
 		http.HandleFunc("/api/health", apiHandler.HealthHandler)
@@ -772,14 +784,14 @@ func (ws *WebService) lrmVerifierHandler(w http.ResponseWriter, r *http.Request)
 	// Set content type
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	// Create L-R-M data using real-world kernel-series.yaml implementation
-	log.Printf("Fetching real-world L-R-M data from kernel-series.yaml")
+	// Create L-R-M data using cached implementation to avoid refetching if less than 5 minutes old
+	log.Printf("Fetching L-R-M data from cache")
 	var lrmData *lrm.LRMVerifierData
-	if realData, fetchErr := lrm.FetchKernelLRMData("ubuntu/4"); fetchErr != nil {
-		log.Printf("Failed to fetch real L-R-M data, falling back to supported releases: %v", fetchErr)
+	if realData, fetchErr := lrm.GetCachedLRMData(); fetchErr != nil {
+		log.Printf("Failed to fetch cached L-R-M data, falling back to supported releases: %v", fetchErr)
 		lrmData = generateLRMDataFromSupportedReleases(ws.supportedReleases)
 	} else {
-		log.Printf("Successfully fetched L-R-M data with %d kernels", len(realData.KernelResults))
+		log.Printf("Successfully fetched cached L-R-M data with %d kernels", len(realData.KernelResults))
 		lrmData = realData
 	}
 
