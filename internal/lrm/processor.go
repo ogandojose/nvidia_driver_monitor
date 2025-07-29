@@ -1055,5 +1055,5 @@ func refreshLRMCache() (*LRMVerifierData, error) {
 
 // fetchLRMDataInternal is the internal function that actually fetches the data
 func fetchLRMDataInternal() (*LRMVerifierData, error) {
-	return FetchKernelLRMData("") // Empty routing means get all
+	return FetchKernelLRMDataDebug("") // Use debug function to get ALL kernels, not just supported with LRM
 }
