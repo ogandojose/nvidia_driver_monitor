@@ -23,6 +23,10 @@ web-server
 nvidia-web-server
 nvidia_example
 nvidia-monitor
+nvidia_driver_monitor
+nvidia-driver-status
+nvidia-web-server-*
+test-*
 
 # IDE files
 .vscode/
@@ -34,6 +38,9 @@ nvidia-monitor
 
 # Log files
 *.log
+
+# HTML output files
+*.html
 
 # Environment files
 .env

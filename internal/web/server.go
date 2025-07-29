@@ -939,21 +939,6 @@ func (ws *WebService) lrmVerifierHandler(w http.ResponseWriter, r *http.Request)
 
 // Helper functions for L-R-M verifier
 
-// getDKMSVersionForDriver gets the DKMS version for a specific driver from the versions map
-func getDKMSVersionForDriver(driverString string, dkmsVersions map[string]string) string {
-	// Extract driver name from the full string
-	if strings.Contains(driverString, "=") {
-		parts := strings.Split(driverString, "=")
-		if len(parts) > 0 {
-			driverName := parts[0]
-			if version, exists := dkmsVersions[driverName]; exists {
-				return version
-			}
-		}
-	}
-	return "N/A"
-}
-
 // generateLRMDataFromSupportedReleases creates L-R-M data from the supported releases
 func generateLRMDataFromSupportedReleases(supportedReleases []releases.SupportedRelease) *lrm.LRMVerifierData {
 	var kernelResults []lrm.KernelLRMResult
