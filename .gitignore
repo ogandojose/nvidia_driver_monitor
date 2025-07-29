@@ -48,7 +48,13 @@ test-*
 
 # OS specific files
 .DS_Store
-Thumbs.db
+
+# Temporary build artifacts and test files
+*-test
+*-fixed
+*-new
+test-*
+readKernelSeriesYaml
 
 # Backup files
 *~
