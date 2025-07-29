@@ -53,6 +53,14 @@ run-web-https:
 	@echo "Running web server application with HTTPS..."
 	go run $(WEB_SOURCE) -https
 
+# Run LRM verifier (web server focused on LRM functionality)
+.PHONY: run-lrm
+run-lrm:
+	@echo "Running web server for LRM verifier testing..."
+	@echo "LRM Verifier will be available at: http://localhost:8080/l-r-m-verifier"
+	@echo "API endpoint available at: http://localhost:8080/api/lrm"
+	go run $(WEB_SOURCE)
+
 # Generate self-signed certificate
 .PHONY: generate-cert
 generate-cert:
@@ -87,11 +95,24 @@ clean:
 	# Remove built binaries
 	-rm -f $(CONSOLE_BINARY)
 	-rm -f $(WEB_BINARY)
-	# Remove test files
+	-rm -f nvidia-driver-monitor
+	-rm -f nvidia_driver_monitor
+	-rm -f nvidia-monitor
+	# Remove test and debug files
 	-rm -f test-*.go
+	-rm -f test_*.go
+	-rm -f *_test_*.go
+	-rm -f debug_*.html
+	-rm -f test_*.html
 	# Remove temporary files
 	-rm -f *.tmp
+	-rm -f *.temp
 	-rm -f *.log
+	-rm -f *~
+	-rm -f *.bak
+	-rm -f *.backup
+	-rm -f .*.swp
+	-rm -f .*.swo
 	# Note: Certificates are preserved (use 'make clean-cert' to remove them)
 	# Remove Go build cache (optional)
 	-go clean -cache
@@ -105,11 +126,24 @@ clean-dev:
 	# Remove built binaries
 	-rm -f $(CONSOLE_BINARY)
 	-rm -f $(WEB_BINARY)
-	# Remove test files
+	-rm -f nvidia-driver-monitor
+	-rm -f nvidia_driver_monitor
+	-rm -f nvidia-monitor
+	# Remove test and debug files
 	-rm -f test-*.go
+	-rm -f test_*.go
+	-rm -f *_test_*.go
+	-rm -f debug_*.html
+	-rm -f test_*.html
 	# Remove temporary files
 	-rm -f *.tmp
+	-rm -f *.temp
 	-rm -f *.log
+	-rm -f *~
+	-rm -f *.bak
+	-rm -f *.backup
+	-rm -f .*.swp
+	-rm -f .*.swo
 	@echo "Development clean completed."
 
 # Full clean including certificates
@@ -122,6 +156,36 @@ clean-all: clean clean-cert
 test:
 	@echo "Running tests..."
 	go test ./...
+
+# Validate templates
+.PHONY: validate-templates
+validate-templates:
+	@echo "Validating HTML templates..."
+	@for template in templates/*.html; do \
+		if [ -f "$$template" ]; then \
+			echo "Checking $$template..."; \
+			if ! grep -q "<!DOCTYPE html>" "$$template"; then \
+				echo "Warning: $$template missing DOCTYPE declaration"; \
+			fi; \
+			if ! grep -q "</html>" "$$template"; then \
+				echo "Warning: $$template missing closing </html> tag"; \
+			fi; \
+		fi; \
+	done
+	@echo "Template validation completed."
+
+# Run template validation and syntax check
+.PHONY: check-templates
+check-templates: validate-templates
+	@echo "Running template syntax check..."
+	@echo "Building web server to validate templates..."
+	@if go build -o /tmp/template-check $(WEB_SOURCE) 2>/dev/null; then \
+		echo "✅ Templates compiled successfully"; \
+		rm -f /tmp/template-check; \
+	else \
+		echo "❌ Template compilation failed"; \
+		exit 1; \
+	fi
 
 # Format code
 .PHONY: fmt
@@ -150,10 +214,13 @@ help:
 	@echo "  run-console      - Run console application"
 	@echo "  run-web          - Run web server application"
 	@echo "  run-web-https    - Run web server application with HTTPS"
+	@echo "  run-lrm          - Run web server for LRM verifier testing"
 	@echo "  generate-cert    - Generate self-signed certificate"
 	@echo "  clean-cert       - Clean certificate files"
 	@echo "  kill-web         - Kill processes running on port 8080"
 	@echo "  test             - Run tests"
+	@echo "  validate-templates - Validate HTML template structure"
+	@echo "  check-templates  - Validate templates and test loading"
 	@echo "  fmt              - Format code"
 	@echo "  lint             - Lint code"
 	@echo "  status           - Show project status"
