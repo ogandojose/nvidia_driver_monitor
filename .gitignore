@@ -41,6 +41,8 @@ test-*
 
 # HTML output files
 *.html
+debug_*.html
+test_*.html
 
 # Environment files
 .env
@@ -60,3 +62,13 @@ readKernelSeriesYaml
 *~
 *.bak
 *.backup
+
+# Debug and test files
+test_*.go
+*_test_*.go
+
+# Additional temporary files
+*.tmp
+*.temp
+.*.swp
+.*.swo
