@@ -19,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	"nvidia_driver_monitor/internal/config"
 	"nvidia_driver_monitor/internal/drivers"
 	"nvidia_driver_monitor/internal/lrm"
 	"nvidia_driver_monitor/internal/packages"
@@ -67,6 +68,10 @@ type WebService struct {
 	EnableHTTPS bool
 	CertFile    string
 	KeyFile     string
+
+	// Additional configuration
+	config        *config.Config
+	templatePath  string
 }
 
 // NewWebService creates a new web service instance
@@ -86,6 +91,30 @@ func NewWebService() (*WebService, error) {
 	}
 
 	// Start background data refresh goroutine
+	go ws.dataRefreshLoop()
+
+	return ws, nil
+}
+
+// NewWebServiceWithConfig creates a new web service instance with configuration
+func NewWebServiceWithConfig(cfg *config.Config, templatePath string) (*WebService, error) {
+	// Initialize the service with empty cache
+	ws := &WebService{
+		cache: &CachedData{
+			AllPackages:   make([]*PackageData, 0),
+			IsInitialized: false,
+		},
+		stopChan: make(chan bool),
+		config:   cfg,
+		templatePath: templatePath,
+	}
+
+	// Perform initial data load
+	if err := ws.refreshData(); err != nil {
+		return nil, fmt.Errorf("failed to perform initial data load: %v", err)
+	}
+
+	// Start background data refresh goroutine with configured interval
 	go ws.dataRefreshLoop()
 
 	return ws, nil
@@ -666,10 +695,37 @@ func (ws *WebService) apiHandler(w http.ResponseWriter, r *http.Request) {
 
 // Start starts the web server with optional HTTPS support
 func (ws *WebService) Start(addr string) error {
-	http.HandleFunc("/", ws.indexHandler)
-	http.HandleFunc("/package", ws.packageHandler)
-	http.HandleFunc("/api", ws.apiHandler)
-	http.HandleFunc("/l-r-m-verifier", ws.lrmVerifierHandler)
+	// Create rate limiter if configured
+	var rateLimiter *RateLimiter
+	if ws.config != nil && ws.config.RateLimit.Enabled {
+		rateLimiter = NewRateLimiter(ws.config.RateLimit.RequestsPerMinute, true)
+		log.Printf("Rate limiting enabled: %d requests per minute", ws.config.RateLimit.RequestsPerMinute)
+	}
+
+	// Create handlers
+	lrmHandler := NewLRMHandler(ws.templatePath)
+	apiHandler := NewAPIHandler()
+
+	// Setup routes with optional rate limiting
+	if rateLimiter != nil {
+		http.Handle("/", rateLimiter.Middleware(http.HandlerFunc(ws.indexHandler)))
+		http.Handle("/package", rateLimiter.Middleware(http.HandlerFunc(ws.packageHandler)))
+		http.Handle("/api", rateLimiter.Middleware(http.HandlerFunc(ws.apiHandler)))
+		http.Handle("/l-r-m-verifier", rateLimiter.Middleware(lrmHandler))
+		
+		// New API endpoints
+		http.Handle("/api/lrm", rateLimiter.Middleware(http.HandlerFunc(apiHandler.LRMDataHandler)))
+		http.Handle("/api/health", rateLimiter.Middleware(http.HandlerFunc(apiHandler.HealthHandler)))
+	} else {
+		http.HandleFunc("/", ws.indexHandler)
+		http.HandleFunc("/package", ws.packageHandler)
+		http.HandleFunc("/api", ws.apiHandler)
+		http.Handle("/l-r-m-verifier", lrmHandler)
+		
+		// New API endpoints
+		http.HandleFunc("/api/lrm", apiHandler.LRMDataHandler)
+		http.HandleFunc("/api/health", apiHandler.HealthHandler)
+	}
 
 	if ws.EnableHTTPS {
 		// Check if certificates exist, generate if they don't
