@@ -68,6 +68,7 @@
                                 <label for="routingFilter" class="form-label">Routing</label>
                                 <select id="routingFilter" class="form-select form-select-sm">
                                     <option value="">All Routings</option>
+                                    <option value="ubuntu/4" selected>ubuntu/4</option>
                                 </select>
                             </div>
                         </div>
@@ -447,24 +448,33 @@
             originalData.forEach(item => routingSet.add(item.Routing || item.routing));
             
             const routingFilter = document.getElementById('routingFilter');
+            // Keep the current selected value
+            const currentValue = routingFilter.value;
+            
             routingSet.forEach(routing => {
-                const option = document.createElement('option');
-                option.value = routing;
-                option.textContent = routing;
-                routingFilter.appendChild(option);
+                // Skip if option already exists
+                if (!Array.from(routingFilter.options).some(option => option.value === routing)) {
+                    const option = document.createElement('option');
+                    option.value = routing;
+                    option.textContent = routing;
+                    routingFilter.appendChild(option);
+                }
             });
+            
+            // Restore the selected value (ubuntu/4 by default)
+            routingFilter.value = currentValue;
         }
 
         function handleLrmFilterChange() {
             const lrmFilter = document.getElementById('lrmSupportedFilter').value;
             
             if (lrmFilter !== 'all') {
-                // When LRM filter is set to specific value, reset other filters
+                // When LRM filter is set to specific value, reset other filters to defaults
                 document.getElementById('seriesFilter').value = '';
-                document.getElementById('routingFilter').value = '';
+                document.getElementById('routingFilter').value = 'ubuntu/4';
                 
                 // Reset status filters to default values
-                document.getElementById('supportedFilter').value = 'all';
+                document.getElementById('supportedFilter').value = 'true';
                 document.getElementById('ltsFilter').value = 'all';
                 document.getElementById('esmFilter').value = 'all';
                 document.getElementById('developmentFilter').value = 'all';
@@ -474,8 +484,10 @@
         }
         
         function handleOtherFilterChange() {
-            // When any other filter is changed, reset the LRM filter to 'all'
-            document.getElementById('lrmSupportedFilter').value = 'all';
+            // When any other filter is changed, reset filters to defaults
+            document.getElementById('lrmSupportedFilter').value = 'true';
+            document.getElementById('supportedFilter').value = 'true';
+            document.getElementById('routingFilter').value = 'ubuntu/4';
             applyFilters();
         }
 
