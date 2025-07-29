@@ -48,6 +48,18 @@ if [ ! -f "./nvidia-web-server" ]; then
     exit 1
 fi
 
+# Check if templates directory exists
+if [ ! -d "./templates" ]; then
+    print_error "templates directory not found. HTML template files are required."
+    exit 1
+fi
+
+# Check if required template files exist
+if [ ! -f "./templates/lrm_verifier.html" ]; then
+    print_error "Required template file templates/lrm_verifier.html not found."
+    exit 1
+fi
+
 print_status "Starting NVIDIA Driver Monitor service installation..."
 
 # Create service user and group
@@ -81,6 +93,13 @@ chown "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR/nvidia-web-server"
 chown "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR/supportedReleases.json"
 chmod 755 "$INSTALL_DIR/nvidia-web-server"
 chmod 644 "$INSTALL_DIR/supportedReleases.json"
+
+# Copy templates directory
+print_status "Installing template files..."
+cp -r "./templates" "$INSTALL_DIR/"
+chown -R "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR/templates"
+find "$INSTALL_DIR/templates" -type f -name "*.html" -exec chmod 644 {} \;
+find "$INSTALL_DIR/templates" -type d -exec chmod 755 {} \;
 
 # Function to generate self-signed certificate
 generate_certificate() {

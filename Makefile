@@ -113,6 +113,8 @@ clean:
 	-rm -f *.backup
 	-rm -f .*.swp
 	-rm -f .*.swo
+	# Remove distribution directory
+	-rm -rf dist/
 	# Note: Certificates are preserved (use 'make clean-cert' to remove them)
 	# Remove Go build cache (optional)
 	-go clean -cache
@@ -144,6 +146,8 @@ clean-dev:
 	-rm -f *.backup
 	-rm -f .*.swp
 	-rm -f .*.swo
+	# Remove distribution directory
+	-rm -rf dist/
 	@echo "Development clean completed."
 
 # Full clean including certificates
@@ -209,6 +213,7 @@ help:
 	@echo "  console          - Build console application"
 	@echo "  web              - Build web server application"
 	@echo "  deps             - Install/update dependencies"
+	@echo "  dist             - Create distribution package with all files"
 	@echo ""
 	@echo "Development targets:"
 	@echo "  run-console      - Run console application"
@@ -227,6 +232,7 @@ help:
 	@echo ""
 	@echo "Service management targets:"
 	@echo "  install-service  - Install systemd service (requires sudo)"
+	@echo "  check-install-requirements - Verify all installation files are present"
 	@echo "  uninstall-service- Uninstall systemd service (requires sudo)"
 	@echo "  service-start    - Start the service"
 	@echo "  service-stop     - Stop the service"
@@ -244,9 +250,47 @@ help:
 
 # Service management targets
 .PHONY: install-service
-install-service: web
+install-service: web check-install-requirements
 	@echo "Installing systemd service..."
 	sudo ./install-service.sh
+
+# Check installation requirements
+.PHONY: check-install-requirements
+check-install-requirements:
+	@echo "Checking installation requirements..."
+	@if [ ! -f "$(WEB_BINARY)" ]; then \
+		echo "❌ Web binary $(WEB_BINARY) not found. Run 'make web' first."; \
+		exit 1; \
+	fi
+	@if [ ! -d "templates" ]; then \
+		echo "❌ Templates directory not found."; \
+		exit 1; \
+	fi
+	@if [ ! -f "templates/lrm_verifier.html" ]; then \
+		echo "❌ Required template templates/lrm_verifier.html not found."; \
+		exit 1; \
+	fi
+	@if [ ! -f "supportedReleases.json" ]; then \
+		echo "❌ supportedReleases.json not found."; \
+		exit 1; \
+	fi
+	@echo "✅ All installation requirements met."
+
+# Create distribution package
+.PHONY: dist
+dist: web check-install-requirements
+	@echo "Creating distribution package..."
+	@mkdir -p dist/nvidia-driver-monitor
+	@cp $(WEB_BINARY) dist/nvidia-driver-monitor/
+	@cp supportedReleases.json dist/nvidia-driver-monitor/
+	@cp -r templates dist/nvidia-driver-monitor/
+	@cp *.service dist/nvidia-driver-monitor/
+	@cp install-service.sh dist/nvidia-driver-monitor/
+	@cp uninstall-service.sh dist/nvidia-driver-monitor/
+	@cp README.md dist/nvidia-driver-monitor/
+	@echo "✅ Distribution package created in dist/nvidia-driver-monitor/"
+	@echo "Package contents:"
+	@find dist/nvidia-driver-monitor -type f | sort
 
 .PHONY: uninstall-service
 uninstall-service:
