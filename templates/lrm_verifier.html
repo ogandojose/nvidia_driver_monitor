@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Linux Restricted Modules (L-R-M) Verifier</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container-fluid { max-width: 1600px; }
+        .table-success { background-color: #d1e7dd !important; }
+        .table-warning { background-color: #fff3cd !important; }
+        .table-danger { background-color: #f8d7da !important; }
+        .badge { font-size: 0.9em; }
+        .kernel-table th { background-color: #f8f9fa; font-weight: 600; }
+        .last-updated { font-size: 0.9em; color: #6c757d; }
+        .sort-icon { 
+            font-size: 0.8em; 
+            margin-left: 5px; 
+            color: #6c757d; 
+        }
+        th[data-sort]:hover { 
+            background-color: #e9ecef !important; 
+        }
+        .card-header h6 { 
+            margin-bottom: 0; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Linux Restricted Modules (L-R-M) Verifier</h1>
+            <a href="/" class="btn btn-secondary">← Back to Main</a>
+        </div>
+        
+        <div class="alert alert-info">
+            <strong>What this does:</strong> This tool displays kernel L-R-M information for supported NVIDIA driver releases, 
+            showing versioning of the kernels and their corresponding linux-restricted-modules packages, 
+            and verifies that source files are using the latest DKMS version.
+        </div>
+
+        <!-- Filtering and Sorting Controls -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">Filters</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-2">
+                            <div class="col-md-3">
+                                <label for="lrmSupportedFilter" class="form-label"><strong>L-R-M Support</strong></label>
+                                <select id="lrmSupportedFilter" class="form-select form-select-sm">
+                                    <option value="all">All</option>
+                                    <option value="true" selected>True</option>
+                                    <option value="false">False</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="seriesFilter" class="form-label">Series</label>
+                                <select id="seriesFilter" class="form-select form-select-sm">
+                                    <option value="">All Series</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="routingFilter" class="form-label">Routing</label>
+                                <select id="routingFilter" class="form-select form-select-sm">
+                                    <option value="">All Routings</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!-- Individual Filter Columns -->
+                        <div class="row">
+                            <div class="col-md-2">
+                                <label class="form-label">Support Status</label>
+                                <select id="supportedFilter" class="form-select form-select-sm">
+                                    <option value="all">All</option>
+                                    <option value="true" selected>True</option>
+                                    <option value="false">False</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">LTS</label>
+                                <select id="ltsFilter" class="form-select form-select-sm">
+                                    <option value="all" selected>All</option>
+                                    <option value="true">True</option>
+                                    <option value="false">False</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">ESM</label>
+                                <select id="esmFilter" class="form-select form-select-sm">
+                                    <option value="all" selected>All</option>
+                                    <option value="true">True</option>
+                                    <option value="false">False</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Development</label>
+                                <select id="developmentFilter" class="form-select form-select-sm">
+                                    <option value="all" selected>All</option>
+                                    <option value="true">True</option>
+                                    <option value="false">False</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">Sorting</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <label for="sortBy" class="form-label">Sort By</label>
+                                <select id="sortBy" class="form-select form-select-sm">
+                                    <option value="series">Series</option>
+                                    <option value="codename">Codename</option>
+                                    <option value="source">Source</option>
+                                    <option value="supported">Supported</option>
+                                    <option value="lts">LTS</option>
+                                    <option value="esm">ESM</option>
+                                    <option value="development">Development</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="sortOrder" class="form-label">Order</label>
+                                <select id="sortOrder" class="form-select form-select-sm">
+                                    <option value="asc">Ascending</option>
+                                    <option value="desc">Descending</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">{{.Data.TotalKernels}}</h5>
+                        <p class="card-text">Total Kernels</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">{{.Data.SupportedLRM}}</h5>
+                        <p class="card-text">Supported with L-R-M</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title" id="displayedResultsCount">{{len .Data.KernelResults}}</h5>
+                        <p class="card-text">Displayed Results</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-muted">{{.Data.LastUpdated.Format "15:04:05"}}</h5>
+                        <p class="card-text">Last Updated</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{if .Data.KernelResults}}
+        <div class="table-responsive">
+            <table id="kernelTable" class="table table-striped table-hover kernel-table">
+                <thead>
+                    <tr>
+                        <th data-sort="series">Series <i class="sort-icon"></i></th>
+                        <th data-sort="codename">Codename <i class="sort-icon"></i></th>
+                        <th data-sort="source">Source & Version <i class="sort-icon"></i></th>
+                        <th data-sort="routing">Routing <i class="sort-icon"></i></th>
+                        <th data-sort="supported">Supported <i class="sort-icon"></i></th>
+                        <th data-sort="lts">LTS <i class="sort-icon"></i></th>
+                        <th data-sort="esm">ESM <i class="sort-icon"></i></th>
+                        <th data-sort="development">Development <i class="sort-icon"></i></th>
+                        <th>L-R-M Package & Version</th>
+                        <th>NVIDIA Driver</th>
+                        <th>Update Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Data.KernelResults}}
+                    <tr>
+                        <td><strong>{{.Series}}</strong></td>
+                        <td>{{.Codename}}</td>
+                        <td>
+                            <div><code>{{.Source}}</code></div>
+                            {{if and (ne .SourceVersion "N/A") (ne .SourceVersion "ERROR")}}
+                            <div class="small text-muted">{{.SourceVersion}}</div>
+                            {{else}}
+                            <div class="small text-muted">{{.SourceVersion}}</div>
+                            {{end}}
+                        </td>
+                        <td><span class="badge bg-secondary">{{.Routing}}</span></td>
+                        <td>
+                            {{if .Supported}}
+                            <span class="badge bg-success">✓</span>
+                            {{else}}
+                            <span class="badge bg-danger">✗</span>
+                            {{end}}
+                        </td>
+                        <td>
+                            {{if .LTS}}
+                            <span class="badge bg-primary">✓</span>
+                            {{else}}
+                            <span class="text-muted">-</span>
+                            {{end}}
+                        </td>
+                        <td>
+                            {{if .ESM}}
+                            <span class="badge bg-secondary">✓</span>
+                            {{else}}
+                            <span class="text-muted">-</span>
+                            {{end}}
+                        </td>
+                        <td>
+                            {{if .Development}}
+                            <span class="badge bg-info">✓</span>
+                            {{else}}
+                            <span class="text-muted">-</span>
+                            {{end}}
+                        </td>
+                        <td>
+                            {{range .LRMPackages}}
+                            <div><code>{{.}}</code></div>
+                            {{end}}
+                            {{if and (ne .LatestLRMVersion "N/A") (ne .LatestLRMVersion "ERROR")}}
+                            <div class="small text-muted">{{.LatestLRMVersion}}</div>
+                            {{else}}
+                            <div class="small text-muted">{{.LatestLRMVersion}}</div>
+                            {{end}}
+                        </td>
+                        <td>
+                            {{range .NvidiaDriverStatuses}}
+                            <div class="mb-1">
+                                <div><strong>{{simplifyDriverName .DriverName}}</strong></div>
+                                <div class="small text-muted">DSC: {{.DSCVersion}}</div>
+                                {{if .DKMSVersion}}
+                                <div class="small text-muted">DKMS: {{.DKMSVersion}}</div>
+                                {{end}}
+                            </div>
+                            {{end}}
+                            {{if not .NvidiaDriverStatuses}}
+                            <span class="text-muted">N/A</span>
+                            {{end}}
+                        </td>
+                        <td>
+                            {{range .NvidiaDriverStatuses}}
+                            <div class="mb-1">
+                                {{if contains .Status "✅ Up to date"}}
+                                <span class="badge bg-success">{{.Status}}</span>
+                                {{else if contains .Status "🔄 Update available"}}
+                                <span class="badge bg-warning">{{.Status}}</span>
+                                {{else}}
+                                <span class="badge bg-secondary">{{.Status}}</span>
+                                {{end}}
+                            </div>
+                            {{end}}
+                            {{if not .NvidiaDriverStatuses}}
+                            <span class="text-muted">N/A</span>
+                            {{end}}
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+        {{else}}
+        <div class="alert alert-warning">
+            <h4>No kernel sources found matching the criteria.</h4>
+            <p>Try changing the routing filter or check if the kernel-series.yaml data is available.</p>
+        </div>
+        {{end}}
+
+        <div class="mt-4">
+            <div class="last-updated">
+                Data generated from supported releases at {{.Data.LastUpdated.Format "2006-01-02 15:04:05 MST"}}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Table filtering and sorting functionality
+        let originalData = [];
+        let currentData = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch data from API instead of parsing HTML table
+            fetchKernelData();
+        });
+
+        async function fetchKernelData() {
+            try {
+                const response = await fetch('/api/lrm');
+                const data = await response.json();
+                
+                // Store original data from API
+                originalData = data.data.kernel_results.map(kernel => {
+                    return {
+                        ...kernel,
+                        element: null, // Will be populated when rendering table
+                        hasLRM: kernel.HasLRM,
+                        supported: kernel.Supported,
+                        development: kernel.Development,
+                        lts: kernel.LTS,
+                        esm: kernel.ESM
+                    };
+                });
+                
+                currentData = [...originalData];
+                
+                // Populate filter dropdowns
+                populateSeriesFilter();
+                populateRoutingFilter();
+                
+                // Add event listeners for all filters
+                document.getElementById('lrmSupportedFilter').addEventListener('change', handleLrmFilterChange);
+                document.getElementById('seriesFilter').addEventListener('change', handleOtherFilterChange);
+                document.getElementById('routingFilter').addEventListener('change', handleOtherFilterChange);
+                
+                // Status dropdown event listeners
+                document.getElementById('supportedFilter').addEventListener('change', handleOtherFilterChange);
+                document.getElementById('ltsFilter').addEventListener('change', handleOtherFilterChange);
+                document.getElementById('esmFilter').addEventListener('change', handleOtherFilterChange);
+                document.getElementById('developmentFilter').addEventListener('change', handleOtherFilterChange);
+                
+                document.getElementById('sortBy').addEventListener('change', applySorting);
+                document.getElementById('sortOrder').addEventListener('change', applySorting);
+                
+                // Add click handlers for column headers
+                document.querySelectorAll('th[data-sort]').forEach(header => {
+                    header.style.cursor = 'pointer';
+                    header.addEventListener('click', function() {
+                        const sortBy = this.getAttribute('data-sort');
+                        document.getElementById('sortBy').value = sortBy;
+                        applySorting();
+                    });
+                });
+                
+                // Apply initial filtering
+                applyFilters();
+            } catch (error) {
+                console.error('Error fetching kernel data:', error);
+                // Fallback to HTML table parsing if API fails
+                fallbackToTableParsing();
+            }
+        }
+
+        function fallbackToTableParsing() {
+            // Store original table data as fallback
+            const tableBody = document.querySelector('#kernelTable tbody');
+            const rows = Array.from(tableBody.querySelectorAll('tr'));
+            
+            originalData = rows.map(row => ({
+                element: row.cloneNode(true),
+                Series: row.cells[0].textContent.trim(),
+                Codename: row.cells[1].textContent.trim(),
+                Source: row.cells[2].textContent.trim(),
+                Routing: row.cells[3].textContent.trim(),
+                hasLRM: row.cells[8].textContent.trim() !== 'N/A' && row.cells[8].textContent.trim() !== '',
+                HasLRM: row.cells[8].textContent.trim() !== 'N/A' && row.cells[8].textContent.trim() !== '',
+                // Parse status badges from individual columns
+                supported: row.cells[4].innerHTML.includes('✓'),
+                Supported: row.cells[4].innerHTML.includes('✓'),
+                development: row.cells[7].innerHTML.includes('✓'),
+                Development: row.cells[7].innerHTML.includes('✓'),
+                lts: row.cells[5].innerHTML.includes('✓'),
+                LTS: row.cells[5].innerHTML.includes('✓'),
+                esm: row.cells[6].innerHTML.includes('✓'),
+                ESM: row.cells[6].innerHTML.includes('✓'),
+                // Extract LRM package information
+                LRMPackages: row.cells[8].innerHTML.includes('<code>') ? 
+                    Array.from(row.cells[8].querySelectorAll('code')).map(code => code.textContent) : [],
+                LatestLRMVersion: row.cells[8].querySelector('.text-muted') ? 
+                    row.cells[8].querySelector('.text-muted').textContent.trim() : 'N/A',
+                // Extract NVIDIA driver information from original HTML
+                nvidiaDriverHTML: row.cells[9].innerHTML,
+                updateStatusHTML: row.cells[10].innerHTML
+            }));
+            
+            currentData = [...originalData];
+            
+            // Populate filter dropdowns
+            populateSeriesFilter();
+            populateRoutingFilter();
+            
+            // Add event listeners
+            document.getElementById('lrmSupportedFilter').addEventListener('change', handleLrmFilterChange);
+            document.getElementById('seriesFilter').addEventListener('change', handleOtherFilterChange);
+            document.getElementById('routingFilter').addEventListener('change', handleOtherFilterChange);
+            
+            // Status dropdown event listeners
+            document.getElementById('supportedFilter').addEventListener('change', handleOtherFilterChange);
+            document.getElementById('ltsFilter').addEventListener('change', handleOtherFilterChange);
+            document.getElementById('esmFilter').addEventListener('change', handleOtherFilterChange);
+            document.getElementById('developmentFilter').addEventListener('change', handleOtherFilterChange);
+            
+            document.getElementById('sortBy').addEventListener('change', applySorting);
+            document.getElementById('sortOrder').addEventListener('change', applySorting);
+            
+            // Add click handlers for column headers
+            document.querySelectorAll('th[data-sort]').forEach(header => {
+                header.style.cursor = 'pointer';
+                header.addEventListener('click', function() {
+                    const sortBy = this.getAttribute('data-sort');
+                    document.getElementById('sortBy').value = sortBy;
+                    applySorting();
+                });
+            });
+            
+            // Apply initial filtering
+            applyFilters();
+        }
+
+        function populateSeriesFilter() {
+            const seriesSet = new Set();
+            originalData.forEach(item => seriesSet.add(item.Series || item.series));
+            
+            const seriesFilter = document.getElementById('seriesFilter');
+            seriesSet.forEach(series => {
+                const option = document.createElement('option');
+                option.value = series;
+                option.textContent = series;
+                seriesFilter.appendChild(option);
+            });
+        }
+
+        function populateRoutingFilter() {
+            const routingSet = new Set();
+            originalData.forEach(item => routingSet.add(item.Routing || item.routing));
+            
+            const routingFilter = document.getElementById('routingFilter');
+            routingSet.forEach(routing => {
+                const option = document.createElement('option');
+                option.value = routing;
+                option.textContent = routing;
+                routingFilter.appendChild(option);
+            });
+        }
+
+        function handleLrmFilterChange() {
+            const lrmFilter = document.getElementById('lrmSupportedFilter').value;
+            
+            if (lrmFilter !== 'all') {
+                // When LRM filter is set to specific value, reset other filters
+                document.getElementById('seriesFilter').value = '';
+                document.getElementById('routingFilter').value = '';
+                
+                // Reset status filters to default values
+                document.getElementById('supportedFilter').value = 'all';
+                document.getElementById('ltsFilter').value = 'all';
+                document.getElementById('esmFilter').value = 'all';
+                document.getElementById('developmentFilter').value = 'all';
+            }
+            
+            applyFilters();
+        }
+        
+        function handleOtherFilterChange() {
+            // When any other filter is changed, reset the LRM filter to 'all'
+            document.getElementById('lrmSupportedFilter').value = 'all';
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const lrmSupportedFilter = document.getElementById('lrmSupportedFilter').value;
+            const seriesFilter = document.getElementById('seriesFilter').value;
+            const routingFilter = document.getElementById('routingFilter').value;
+            
+            // Get status filter dropdown values
+            const supportedFilter = document.getElementById('supportedFilter').value;
+            const ltsFilter = document.getElementById('ltsFilter').value;
+            const esmFilter = document.getElementById('esmFilter').value;
+            const developmentFilter = document.getElementById('developmentFilter').value;
+            
+            currentData = originalData.filter(item => {
+                let matches = true;
+                
+                // Apply LRM filter
+                if (lrmSupportedFilter !== 'all') {
+                    const hasLRM = item.hasLRM || item.HasLRM;
+                    if (lrmSupportedFilter === 'true' && !hasLRM) {
+                        matches = false;
+                    }
+                    if (lrmSupportedFilter === 'false' && hasLRM) {
+                        matches = false;
+                    }
+                }
+                
+                // Apply series filter
+                if (seriesFilter && (item.Series || item.series) !== seriesFilter) {
+                    matches = false;
+                }
+                
+                // Apply routing filter
+                if (routingFilter && (item.Routing || item.routing) !== routingFilter) {
+                    matches = false;
+                }
+                
+                // Apply status filters based on dropdown selections
+                
+                // Apply Supported filter
+                if (supportedFilter !== 'all') {
+                    const isSupported = item.supported || item.Supported;
+                    if (supportedFilter === 'true' && !isSupported) {
+                        matches = false;
+                    }
+                    if (supportedFilter === 'false' && isSupported) {
+                        matches = false;
+                    }
+                }
+                
+                // Apply LTS filter
+                if (ltsFilter !== 'all') {
+                    const isLTS = item.lts || item.LTS;
+                    if (ltsFilter === 'true' && !isLTS) {
+                        matches = false;
+                    }
+                    if (ltsFilter === 'false' && isLTS) {
+                        matches = false;
+                    }
+                }
+                
+                // Apply ESM filter
+                if (esmFilter !== 'all') {
+                    const isESM = item.esm || item.ESM;
+                    if (esmFilter === 'true' && !isESM) {
+                        matches = false;
+                    }
+                    if (esmFilter === 'false' && isESM) {
+                        matches = false;
+                    }
+                }
+                
+                // Apply Development filter
+                if (developmentFilter !== 'all') {
+                    const isDevelopment = item.development || item.Development;
+                    if (developmentFilter === 'true' && !isDevelopment) {
+                        matches = false;
+                    }
+                    if (developmentFilter === 'false' && isDevelopment) {
+                        matches = false;
+                    }
+                }
+                
+                return matches;
+            });
+            
+            applySorting();
+        }
+
+        function applySorting() {
+            const sortBy = document.getElementById('sortBy').value;
+            const sortOrder = document.getElementById('sortOrder').value;
+            
+            currentData.sort((a, b) => {
+                let valueA = '';
+                let valueB = '';
+                
+                // Map sort fields to correct API field names
+                switch(sortBy) {
+                    case 'series':
+                        valueA = a.Series || a.series || '';
+                        valueB = b.Series || b.series || '';
+                        break;
+                    case 'codename':
+                        valueA = a.Codename || a.codename || '';
+                        valueB = b.Codename || b.codename || '';
+                        break;
+                    case 'source':
+                        valueA = a.Source || a.source || '';
+                        valueB = b.Source || b.source || '';
+                        break;
+                    case 'routing':
+                        valueA = a.Routing || a.routing || '';
+                        valueB = b.Routing || b.routing || '';
+                        break;
+                    case 'supported':
+                        valueA = (a.Supported || a.supported) ? 1 : 0;
+                        valueB = (b.Supported || b.supported) ? 1 : 0;
+                        break;
+                    case 'lts':
+                        valueA = (a.LTS || a.lts) ? 1 : 0;
+                        valueB = (b.LTS || b.lts) ? 1 : 0;
+                        break;
+                    case 'esm':
+                        valueA = (a.ESM || a.esm) ? 1 : 0;
+                        valueB = (b.ESM || b.esm) ? 1 : 0;
+                        break;
+                    case 'development':
+                        valueA = (a.Development || a.development) ? 1 : 0;
+                        valueB = (b.Development || b.development) ? 1 : 0;
+                        break;
+                    default:
+                        valueA = a[sortBy] || '';
+                        valueB = b[sortBy] || '';
+                }
+                
+                // Convert to lowercase for case-insensitive sorting (except for numeric values)
+                if (typeof valueA === 'string') valueA = valueA.toLowerCase();
+                if (typeof valueB === 'string') valueB = valueB.toLowerCase();
+                
+                let comparison;
+                if (typeof valueA === 'number' && typeof valueB === 'number') {
+                    comparison = valueA - valueB;
+                } else {
+                    comparison = valueA.toString().localeCompare(valueB.toString());
+                }
+                
+                return sortOrder === 'desc' ? -comparison : comparison;
+            });
+            
+            updateTable();
+        }
+
+        function updateTable() {
+            const tableBody = document.querySelector('#kernelTable tbody');
+            tableBody.innerHTML = '';
+            
+            currentData.forEach(item => {
+                if (item.element) {
+                    // Use cloned element if available (fallback mode)
+                    tableBody.appendChild(item.element.cloneNode(true));
+                } else {
+                    // Create new row from API data
+                    const row = document.createElement('tr');
+                    
+                    // Series
+                    const seriesCell = document.createElement('td');
+                    seriesCell.innerHTML = `<strong>${item.Series || ''}</strong>`;
+                    row.appendChild(seriesCell);
+                    
+                    // Codename
+                    const codenameCell = document.createElement('td');
+                    codenameCell.textContent = item.Codename || '';
+                    row.appendChild(codenameCell);
+                    
+                    // Source & Version
+                    const sourceCell = document.createElement('td');
+                    const sourceHTML = `<div><code>${item.Source || ''}</code></div>`;
+                    const versionHTML = item.SourceVersion && item.SourceVersion !== 'N/A' && item.SourceVersion !== 'ERROR' 
+                        ? `<div class="small text-muted">${item.SourceVersion}</div>`
+                        : `<div class="small text-muted">${item.SourceVersion || 'N/A'}</div>`;
+                    sourceCell.innerHTML = sourceHTML + versionHTML;
+                    row.appendChild(sourceCell);
+                    
+                    // Routing
+                    const routingCell = document.createElement('td');
+                    routingCell.innerHTML = `<span class="badge bg-secondary">${item.Routing || ''}</span>`;
+                    row.appendChild(routingCell);
+                    
+                    // Supported Status
+                    const supportedCell = document.createElement('td');
+                    if (item.Supported) {
+                        supportedCell.innerHTML = '<span class="badge bg-success">✓</span>';
+                    } else {
+                        supportedCell.innerHTML = '<span class="badge bg-danger">✗</span>';
+                    }
+                    row.appendChild(supportedCell);
+                    
+                    // LTS Status
+                    const ltsCell = document.createElement('td');
+                    if (item.LTS) {
+                        ltsCell.innerHTML = '<span class="badge bg-primary">✓</span>';
+                    } else {
+                        ltsCell.innerHTML = '<span class="text-muted">-</span>';
+                    }
+                    row.appendChild(ltsCell);
+                    
+                    // ESM Status
+                    const esmCell = document.createElement('td');
+                    if (item.ESM) {
+                        esmCell.innerHTML = '<span class="badge bg-secondary">✓</span>';
+                    } else {
+                        esmCell.innerHTML = '<span class="text-muted">-</span>';
+                    }
+                    row.appendChild(esmCell);
+                    
+                    // Development Status
+                    const developmentCell = document.createElement('td');
+                    if (item.Development) {
+                        developmentCell.innerHTML = '<span class="badge bg-info">✓</span>';
+                    } else {
+                        developmentCell.innerHTML = '<span class="text-muted">-</span>';
+                    }
+                    row.appendChild(developmentCell);
+                    
+                    // L-R-M Package & Version
+                    const lrmCell = document.createElement('td');
+                    if (item.nvidiaDriverHTML) {
+                        // Use preserved HTML for LRM in fallback mode
+                        lrmCell.innerHTML = item.element.cells[8].innerHTML;
+                    } else if (item.LRMPackages && item.LRMPackages.length > 0) {
+                        const packageHTML = item.LRMPackages.map(pkg => `<div><code>${pkg}</code></div>`).join('');
+                        const versionHTML = item.LatestLRMVersion && item.LatestLRMVersion !== 'N/A' && item.LatestLRMVersion !== 'ERROR'
+                            ? `<div class="small text-muted">${item.LatestLRMVersion}</div>`
+                            : `<div class="small text-muted">${item.LatestLRMVersion || 'N/A'}</div>`;
+                        lrmCell.innerHTML = packageHTML + versionHTML;
+                    } else {
+                        lrmCell.innerHTML = '<span class="text-muted">N/A</span>';
+                    }
+                    row.appendChild(lrmCell);
+                    
+                    // NVIDIA Driver (Driver name, DSC version, DKMS version)
+                    const nvidiaDriverCell = document.createElement('td');
+                    if (item.nvidiaDriverHTML) {
+                        // Use preserved HTML from original table in fallback mode
+                        nvidiaDriverCell.innerHTML = item.nvidiaDriverHTML;
+                    } else if (item.NvidiaDriverStatuses && item.NvidiaDriverStatuses.length > 0) {
+                        const driverHTML = item.NvidiaDriverStatuses.map(driver => {
+                            let html = `<div class="mb-1">`;
+                            html += `<div><strong>${driver.DriverName || 'Unknown Driver'}</strong></div>`;
+                            html += `<div class="small text-muted">DSC: ${driver.DSCVersion || 'N/A'}</div>`;
+                            if (driver.DKMSVersion) {
+                                html += `<div class="small text-muted">DKMS: ${driver.DKMSVersion}</div>`;
+                            }
+                            html += `</div>`;
+                            return html;
+                        }).join('');
+                        nvidiaDriverCell.innerHTML = driverHTML;
+                    } else {
+                        nvidiaDriverCell.innerHTML = '<span class="text-muted">N/A</span>';
+                    }
+                    row.appendChild(nvidiaDriverCell);
+                    
+                    // Update Status (Status badges)
+                    const updateStatusCell = document.createElement('td');
+                    if (item.updateStatusHTML) {
+                        // Use preserved HTML from original table in fallback mode
+                        updateStatusCell.innerHTML = item.updateStatusHTML;
+                    } else if (item.NvidiaDriverStatuses && item.NvidiaDriverStatuses.length > 0) {
+                        const statusHTML = item.NvidiaDriverStatuses.map(driver => {
+                            let badgeClass = 'bg-secondary';
+                            if (driver.Status && driver.Status.includes('✅ Up to date')) {
+                                badgeClass = 'bg-success';
+                            } else if (driver.Status && driver.Status.includes('🔄 Update available')) {
+                                badgeClass = 'bg-warning';
+                            }
+                            return `<div class="mb-1"><span class="badge ${badgeClass}">${driver.Status || 'Unknown'}</span></div>`;
+                        }).join('');
+                        updateStatusCell.innerHTML = statusHTML;
+                    } else {
+                        updateStatusCell.innerHTML = '<span class="text-muted">N/A</span>';
+                    }
+                    row.appendChild(updateStatusCell);
+                    
+                    tableBody.appendChild(row);
+                }
+            });
+            
+            // Update the displayed results count
+            document.getElementById('displayedResultsCount').textContent = currentData.length;
+            
+            // Update sort icons
+            document.querySelectorAll('.sort-icon').forEach(icon => {
+                icon.textContent = '';
+            });
+            
+            const sortBy = document.getElementById('sortBy').value;
+            const sortOrder = document.getElementById('sortOrder').value;
+            const activeHeader = document.querySelector(`th[data-sort="${sortBy}"] .sort-icon`);
+            
+            if (activeHeader) {
+                activeHeader.textContent = sortOrder === 'asc' ? '↑' : '↓';
+            }
+        }
+    </script>
+</body>
+</html>
