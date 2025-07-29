@@ -877,8 +877,7 @@ func (ws *WebService) lrmVerifierHandler(w http.ResponseWriter, r *http.Request)
                         <th>Routing</th>
                         <th>Status</th>
                         <th>L-R-M Package & Version</th>
-                        <th>NVIDIA Driver</th>
-                        <th>Update Status</th>
+                        <th>NVIDIA Driver & Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -913,28 +912,25 @@ func (ws *WebService) lrmVerifierHandler(w http.ResponseWriter, r *http.Request)
                         </td>
                         <td>
                             {{range .NvidiaDriverStatuses}}
-                            <div class="mb-1">
-                                <div><strong>{{simplifyDriverName .DriverName}}</strong></div>
-                                <div class="small text-muted">DSC: {{.DSCVersion}}</div>
-                                {{if .DKMSVersion}}
-                                <div class="small text-muted">DKMS: {{.DKMSVersion}}</div>
-                                {{end}}
-                            </div>
-                            {{end}}
-                            {{if not .NvidiaDriverStatuses}}
-                            <span class="text-muted">N/A</span>
-                            {{end}}
-                        </td>
-                        <td>
-                            {{range .NvidiaDriverStatuses}}
-                            <div class="mb-1">
-                                {{if contains .Status "✅ Up to date"}}
-                                <span class="badge bg-success">{{.Status}}</span>
-                                {{else if contains .Status "🔄 Update available"}}
-                                <span class="badge bg-warning">{{.Status}}</span>
-                                {{else}}
-                                <span class="badge bg-secondary">{{.Status}}</span>
-                                {{end}}
+                            <div class="mb-1 d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div><strong>{{simplifyDriverName .DriverName}}</strong></div>
+                                    <div class="small text-muted">DSC: {{.DSCVersion}}</div>
+                                    {{if .DKMSVersion}}
+                                    <div class="small text-muted">DKMS: {{.DKMSVersion}}</div>
+                                    {{end}}
+                                </div>
+                                <div class="ms-2">
+                                    {{if contains .Status "✅ Up to date"}}
+                                    <span class="badge bg-success">{{.Status}}</span>
+                                    {{else if contains .Status "🔄 Update available"}}
+                                    <span class="badge bg-warning">{{.Status}}</span>
+                                    {{else if contains .Status "⚠️ Unknown"}}
+                                    <span class="badge bg-secondary">{{.Status}}</span>
+                                    {{else}}
+                                    <span class="badge bg-secondary">{{.Status}}</span>
+                                    {{end}}
+                                </div>
                             </div>
                             {{end}}
                             {{if not .NvidiaDriverStatuses}}

@@ -191,8 +191,7 @@
                         <th data-sort="esm">ESM <i class="sort-icon"></i></th>
                         <th data-sort="development">Development <i class="sort-icon"></i></th>
                         <th>L-R-M Package & Version</th>
-                        <th>NVIDIA Driver</th>
-                        <th>Update Status</th>
+                        <th>NVIDIA Driver & Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -249,28 +248,25 @@
                         </td>
                         <td>
                             {{range .NvidiaDriverStatuses}}
-                            <div class="mb-1">
-                                <div><strong>{{simplifyDriverName .DriverName}}</strong></div>
-                                <div class="small text-muted">DSC: {{.DSCVersion}}</div>
-                                {{if .DKMSVersion}}
-                                <div class="small text-muted">DKMS: {{.DKMSVersion}}</div>
-                                {{end}}
-                            </div>
-                            {{end}}
-                            {{if not .NvidiaDriverStatuses}}
-                            <span class="text-muted">N/A</span>
-                            {{end}}
-                        </td>
-                        <td>
-                            {{range .NvidiaDriverStatuses}}
-                            <div class="mb-1">
-                                {{if contains .Status "✅ Up to date"}}
-                                <span class="badge bg-success">{{.Status}}</span>
-                                {{else if contains .Status "🔄 Update available"}}
-                                <span class="badge bg-warning">{{.Status}}</span>
-                                {{else}}
-                                <span class="badge bg-secondary">{{.Status}}</span>
-                                {{end}}
+                            <div class="mb-1 d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div><strong>{{simplifyDriverName .DriverName}}</strong></div>
+                                    <div class="small text-muted">DSC: {{.DSCVersion}}</div>
+                                    {{if .DKMSVersion}}
+                                    <div class="small text-muted">DKMS: {{.DKMSVersion}}</div>
+                                    {{end}}
+                                </div>
+                                <div class="ms-2">
+                                    {{if contains .Status "✅ Up to date"}}
+                                    <span class="badge bg-success">{{.Status}}</span>
+                                    {{else if contains .Status "🔄 Update available"}}
+                                    <span class="badge bg-warning">{{.Status}}</span>
+                                    {{else if contains .Status "⚠️ Unknown"}}
+                                    <span class="badge bg-secondary">{{.Status}}</span>
+                                    {{else}}
+                                    <span class="badge bg-secondary">{{.Status}}</span>
+                                    {{end}}
+                                </div>
                             </div>
                             {{end}}
                             {{if not .NvidiaDriverStatuses}}
@@ -301,6 +297,15 @@
         // Table filtering and sorting functionality
         let originalData = [];
         let currentData = [];
+
+        // Function to simplify NVIDIA driver names (matches Go template function)
+        function simplifyDriverName(driverName) {
+            const prefix = "nvidia-graphics-drivers-";
+            if (driverName && driverName.startsWith(prefix)) {
+                return driverName.substring(prefix.length);
+            }
+            return driverName;
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
             // Fetch data from API instead of parsing HTML table
@@ -392,8 +397,7 @@
                 LatestLRMVersion: row.cells[8].querySelector('.text-muted') ? 
                     row.cells[8].querySelector('.text-muted').textContent.trim() : 'N/A',
                 // Extract NVIDIA driver information from original HTML
-                nvidiaDriverHTML: row.cells[9].innerHTML,
-                updateStatusHTML: row.cells[10].innerHTML
+                nvidiaDriverHTML: row.cells[9].innerHTML
             }));
             
             currentData = [...originalData];
@@ -468,12 +472,10 @@
         function handleLrmFilterChange() {
             const lrmFilter = document.getElementById('lrmSupportedFilter').value;
             
-            if (lrmFilter !== 'all') {
-                // When LRM filter is set to specific value, reset other filters to defaults
+            // Only reset filters when switching to 'all' LRM view
+            if (lrmFilter === 'all') {
+                // When LRM filter is set to 'all', reset other filters to defaults for clarity
                 document.getElementById('seriesFilter').value = '';
-                document.getElementById('routingFilter').value = 'ubuntu/4';
-                
-                // Reset status filters to default values
                 document.getElementById('supportedFilter').value = 'true';
                 document.getElementById('ltsFilter').value = 'all';
                 document.getElementById('esmFilter').value = 'all';
@@ -484,10 +486,7 @@
         }
         
         function handleOtherFilterChange() {
-            // When any other filter is changed, reset filters to defaults
-            document.getElementById('lrmSupportedFilter').value = 'true';
-            document.getElementById('supportedFilter').value = 'true';
-            document.getElementById('routingFilter').value = 'ubuntu/4';
+            // When any other filter is changed, just apply the current filter values
             applyFilters();
         }
 
@@ -730,19 +729,31 @@
                     }
                     row.appendChild(lrmCell);
                     
-                    // NVIDIA Driver (Driver name, DSC version, DKMS version)
+                    // NVIDIA Driver & Status (Combined: Driver name, DSC version, DKMS version, and status badge)
                     const nvidiaDriverCell = document.createElement('td');
                     if (item.nvidiaDriverHTML) {
                         // Use preserved HTML from original table in fallback mode
                         nvidiaDriverCell.innerHTML = item.nvidiaDriverHTML;
                     } else if (item.NvidiaDriverStatuses && item.NvidiaDriverStatuses.length > 0) {
                         const driverHTML = item.NvidiaDriverStatuses.map(driver => {
-                            let html = `<div class="mb-1">`;
-                            html += `<div><strong>${driver.DriverName || 'Unknown Driver'}</strong></div>`;
+                            let badgeClass = 'bg-secondary';
+                            if (driver.Status && driver.Status.includes('✅ Up to date')) {
+                                badgeClass = 'bg-success';
+                            } else if (driver.Status && driver.Status.includes('🔄 Update available')) {
+                                badgeClass = 'bg-warning';
+                            }
+                            
+                            let html = `<div class="mb-1 d-flex align-items-center justify-content-between">`;
+                            html += `<div>`;
+                            html += `<div><strong>${simplifyDriverName(driver.DriverName) || 'Unknown Driver'}</strong></div>`;
                             html += `<div class="small text-muted">DSC: ${driver.DSCVersion || 'N/A'}</div>`;
                             if (driver.DKMSVersion) {
                                 html += `<div class="small text-muted">DKMS: ${driver.DKMSVersion}</div>`;
                             }
+                            html += `</div>`;
+                            html += `<div class="ms-2">`;
+                            html += `<span class="badge ${badgeClass}">${driver.Status || 'Unknown'}</span>`;
+                            html += `</div>`;
                             html += `</div>`;
                             return html;
                         }).join('');
@@ -751,27 +762,6 @@
                         nvidiaDriverCell.innerHTML = '<span class="text-muted">N/A</span>';
                     }
                     row.appendChild(nvidiaDriverCell);
-                    
-                    // Update Status (Status badges)
-                    const updateStatusCell = document.createElement('td');
-                    if (item.updateStatusHTML) {
-                        // Use preserved HTML from original table in fallback mode
-                        updateStatusCell.innerHTML = item.updateStatusHTML;
-                    } else if (item.NvidiaDriverStatuses && item.NvidiaDriverStatuses.length > 0) {
-                        const statusHTML = item.NvidiaDriverStatuses.map(driver => {
-                            let badgeClass = 'bg-secondary';
-                            if (driver.Status && driver.Status.includes('✅ Up to date')) {
-                                badgeClass = 'bg-success';
-                            } else if (driver.Status && driver.Status.includes('🔄 Update available')) {
-                                badgeClass = 'bg-warning';
-                            }
-                            return `<div class="mb-1"><span class="badge ${badgeClass}">${driver.Status || 'Unknown'}</span></div>`;
-                        }).join('');
-                        updateStatusCell.innerHTML = statusHTML;
-                    } else {
-                        updateStatusCell.innerHTML = '<span class="text-muted">N/A</span>';
-                    }
-                    row.appendChild(updateStatusCell);
                     
                     tableBody.appendChild(row);
                 }
