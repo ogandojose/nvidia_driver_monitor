@@ -404,11 +404,11 @@ class StatisticsDashboard {
         const tbody = document.querySelector('#historical-windows-table tbody');
         const noDataMessage = document.getElementById('no-historical-windows');
         
-        // Combine current window with historical windows for display
-        const allWindows = [...data.historical_windows];
-        
         // Clear existing content
         tbody.innerHTML = '';
+        
+        // Combine current window with historical windows for display
+        const allWindows = [...data.historical_windows];
         
         if (allWindows.length === 0) {
             noDataMessage.style.display = 'block';
