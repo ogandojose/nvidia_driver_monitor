@@ -54,9 +54,31 @@ if [ ! -d "./templates" ]; then
     exit 1
 fi
 
+# Check if static directory exists
+if [ ! -d "./static" ]; then
+    print_error "static directory not found. CSS and JavaScript files are required."
+    exit 1
+fi
+
 # Check if required template files exist
 if [ ! -f "./templates/lrm_verifier.html" ]; then
     print_error "Required template file templates/lrm_verifier.html not found."
+    exit 1
+fi
+
+if [ ! -f "./templates/statistics.html" ]; then
+    print_error "Required template file templates/statistics.html not found."
+    exit 1
+fi
+
+# Check if required static files exist
+if [ ! -f "./static/css/statistics.css" ]; then
+    print_error "Required CSS file static/css/statistics.css not found."
+    exit 1
+fi
+
+if [ ! -f "./static/js/statistics.js" ]; then
+    print_error "Required JavaScript file static/js/statistics.js not found."
     exit 1
 fi
 
@@ -100,6 +122,13 @@ cp -r "./templates" "$INSTALL_DIR/"
 chown -R "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR/templates"
 find "$INSTALL_DIR/templates" -type f -name "*.html" -exec chmod 644 {} \;
 find "$INSTALL_DIR/templates" -type d -exec chmod 755 {} \;
+
+# Copy static assets directory (CSS, JavaScript, etc.)
+print_status "Installing static assets..."
+cp -r "./static" "$INSTALL_DIR/"
+chown -R "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR/static"
+find "$INSTALL_DIR/static" -type f \( -name "*.css" -o -name "*.js" \) -exec chmod 644 {} \;
+find "$INSTALL_DIR/static" -type d -exec chmod 755 {} \;
 
 # Function to generate self-signed certificate
 generate_certificate() {
