@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"nvidia_driver_monitor/internal/lrm"
+	"nvidia_driver_monitor/internal/stats"
 )
 
 // APIHandler handles REST API endpoints
@@ -128,6 +129,37 @@ func (h *APIHandler) RoutingsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, `{"error": "Failed to encode response"}`, http.StatusInternalServerError)
+		return
+	}
+}
+
+// StatisticsHandler returns API statistics as JSON
+func (h *APIHandler) StatisticsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	collector := stats.GetStatsCollector()
+
+	// Prepare response data
+	response := map[string]interface{}{
+		"current_window":      collector.GetCurrentWindowInfo(),
+		"historical_windows":  collector.GetAllWindowsStats(),
+		"server_time":         time.Now().Format("2006-01-02 15:04:05 UTC"),
+		"window_duration_minutes": 10,
+		"max_stored_windows":  10,
+	}
+
+	// Encode and send response
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("Error encoding statistics response: %v", err)
 		http.Error(w, `{"error": "Failed to encode response"}`, http.StatusInternalServerError)
 		return
 	}

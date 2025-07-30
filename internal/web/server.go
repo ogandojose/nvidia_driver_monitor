@@ -15,6 +15,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -118,19 +119,27 @@ func NewWebServiceWithConfig(cfg *config.Config, templatePath string) (*WebServi
 		templatePath: templatePath,
 	}
 
-	// Perform initial data load
-	if err := ws.refreshData(); err != nil {
-		return nil, fmt.Errorf("failed to perform initial data load: %v", err)
-	}
+	// Start initial data load in background
+	log.Printf("Starting background data refresh...")
+	go func() {
+		if err := ws.refreshData(); err != nil {
+			log.Printf("Background data refresh failed: %v", err)
+		} else {
+			log.Printf("Background data refresh completed successfully")
+		}
+	}()
 
-	// Initialize LRM cache
-	if err := lrm.InitializeLRMCache(); err != nil {
-		log.Printf("Warning: Failed to initialize LRM cache: %v", err)
-		// Don't fail startup, just log the warning
-	} else {
-		// Start background LRM cache refresh
-		lrm.StartBackgroundRefresh()
-	}
+	// Initialize LRM cache in background
+	go func() {
+		if err := lrm.InitializeLRMCache(); err != nil {
+			log.Printf("Warning: Failed to initialize LRM cache: %v", err)
+			// Don't fail startup, just log the warning
+		} else {
+			log.Printf("LRM cache initialized successfully")
+			// Start background LRM cache refresh
+			lrm.StartBackgroundRefresh()
+		}
+	}()
 
 	// Start background data refresh goroutine with configured interval
 	go ws.dataRefreshLoop()
@@ -738,23 +747,33 @@ func (ws *WebService) Start(addr string) error {
 		http.Handle("/package", rateLimiter.Middleware(http.HandlerFunc(ws.packageHandler)))
 		http.Handle("/api", rateLimiter.Middleware(http.HandlerFunc(ws.apiHandler)))
 		http.Handle("/l-r-m-verifier", rateLimiter.Middleware(lrmHandler))
+		http.Handle("/statistics", rateLimiter.Middleware(http.HandlerFunc(ws.statisticsPageHandler)))
+
+		// Static files for statistics dashboard
+		http.Handle("/static/", rateLimiter.Middleware(http.StripPrefix("/static", http.FileServer(http.Dir("static")))))
 
 		// New API endpoints
 		http.Handle("/api/lrm", rateLimiter.Middleware(http.HandlerFunc(apiHandler.LRMDataHandler)))
 		http.Handle("/api/health", rateLimiter.Middleware(http.HandlerFunc(apiHandler.HealthHandler)))
 		http.Handle("/api/routings", rateLimiter.Middleware(http.HandlerFunc(apiHandler.RoutingsHandler)))
 		http.Handle("/api/cache-status", rateLimiter.Middleware(http.HandlerFunc(apiHandler.CacheStatusHandler)))
+		http.Handle("/api/statistics", rateLimiter.Middleware(http.HandlerFunc(apiHandler.StatisticsHandler)))
 	} else {
 		http.HandleFunc("/", ws.indexHandler)
 		http.HandleFunc("/package", ws.packageHandler)
 		http.HandleFunc("/api", ws.apiHandler)
 		http.Handle("/l-r-m-verifier", lrmHandler)
+		http.HandleFunc("/statistics", ws.statisticsPageHandler)
+
+		// Static files for statistics dashboard
+		http.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir("static"))))
 
 		// New API endpoints
 		http.HandleFunc("/api/lrm", apiHandler.LRMDataHandler)
 		http.HandleFunc("/api/health", apiHandler.HealthHandler)
 		http.HandleFunc("/api/routings", apiHandler.RoutingsHandler)
 		http.HandleFunc("/api/cache-status", apiHandler.CacheStatusHandler)
+		http.HandleFunc("/api/statistics", apiHandler.StatisticsHandler)
 	}
 
 	if ws.EnableHTTPS {
@@ -1015,6 +1034,32 @@ func (ws *WebService) lrmVerifierHandler(w http.ResponseWriter, r *http.Request)
 	// Execute template
 	if err := tmpl.Execute(w, templateData); err != nil {
 		http.Error(w, fmt.Sprintf("Template execution error: %v", err), http.StatusInternalServerError)
+		return
+	}
+}
+
+// statisticsPageHandler serves the statistics dashboard HTML page
+func (ws *WebService) statisticsPageHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	
+	// Read the statistics template
+	templatePath := filepath.Join(ws.templatePath, "statistics.html")
+	templateContent, err := os.ReadFile(templatePath)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error reading statistics template: %v", err), http.StatusInternalServerError)
+		return
+	}
+	
+	// Parse and execute the template
+	tmpl, err := template.New("statistics").Parse(string(templateContent))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error parsing statistics template: %v", err), http.StatusInternalServerError)
+		return
+	}
+	
+	// Execute the template with no data (JavaScript will load data dynamically)
+	if err := tmpl.Execute(w, nil); err != nil {
+		http.Error(w, fmt.Sprintf("Error executing statistics template: %v", err), http.StatusInternalServerError)
 		return
 	}
 }
