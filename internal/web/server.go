@@ -475,7 +475,10 @@ func (ws *WebService) indexHandler(w http.ResponseWriter, r *http.Request) {
     <div class="container-fluid mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>NVIDIA Driver Package Status Monitor</h1>
-            <a href="/l-r-m-verifier" class="btn btn-info">L-R-M Verifier →</a>
+            <div>
+                <a href="/statistics" class="btn btn-primary me-2">📊 Statistics Dashboard</a>
+                <a href="/l-r-m-verifier" class="btn btn-info">L-R-M Verifier →</a>
+            </div>
         </div>
         
         <div class="alert alert-info">
