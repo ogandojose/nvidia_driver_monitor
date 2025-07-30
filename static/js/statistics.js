@@ -45,6 +45,7 @@ class StatisticsDashboard {
         this.updateSummaryCards(data);
         this.updateCharts(data);
         this.updateDomainTable(data);
+        this.updateHistoricalWindowsTable(data);
         this.updateMetadata(data);
     }
 
@@ -397,6 +398,87 @@ class StatisticsDashboard {
                 <td>${status}</td>
             `;
         });
+    }
+
+    updateHistoricalWindowsTable(data) {
+        const tbody = document.querySelector('#historical-windows-table tbody');
+        const noDataMessage = document.getElementById('no-historical-windows');
+        
+        // Combine current window with historical windows for display
+        const allWindows = [...data.historical_windows];
+        
+        // Clear existing content
+        tbody.innerHTML = '';
+        
+        if (allWindows.length === 0) {
+            noDataMessage.style.display = 'block';
+            return;
+        }
+        
+        noDataMessage.style.display = 'none';
+        
+        // Sort windows by start time (newest first)
+        allWindows.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+        
+        // Take only the last 10 windows
+        const recentWindows = allWindows.slice(0, 10);
+        
+        recentWindows.forEach(window => {
+            const stats = window.stats;
+            const domains = Object.keys(stats);
+            
+            // Calculate aggregated stats for this window
+            let totalRequests = 0;
+            let totalSuccessful = 0;
+            let totalFailed = 0;
+            let totalRetries = 0;
+            let totalResponseTime = 0;
+            let requestCount = 0;
+            
+            domains.forEach(domain => {
+                const domainStats = stats[domain];
+                totalRequests += domainStats.total_requests;
+                totalSuccessful += domainStats.successful_reqs;
+                totalFailed += domainStats.failed_reqs;
+                totalRetries += domainStats.total_retries;
+                totalResponseTime += domainStats.avg_response_ms * domainStats.total_requests;
+                requestCount += domainStats.total_requests;
+            });
+            
+            const successRate = totalRequests > 0 ? ((totalSuccessful / totalRequests) * 100).toFixed(1) : 0;
+            const avgResponseTime = requestCount > 0 ? (totalResponseTime / requestCount).toFixed(1) : 0;
+            
+            // Format time period
+            const startTime = new Date(window.start_time);
+            const endTime = new Date(window.end_time);
+            const timePeriod = this.formatTimePeriod(startTime, endTime);
+            const duration = this.formatDuration(startTime, endTime);
+            
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td><strong>${timePeriod}</strong></td>
+                <td>${totalRequests.toLocaleString()}</td>
+                <td>${successRate}%</td>
+                <td>${totalFailed.toLocaleString()}</td>
+                <td>${totalRetries.toLocaleString()}</td>
+                <td>${avgResponseTime} ms</td>
+                <td>${domains.length}</td>
+                <td>${duration}</td>
+            `;
+        });
+    }
+
+    formatTimePeriod(startTime, endTime) {
+        const start = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const end = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const date = startTime.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        return `${date} ${start}-${end}`;
+    }
+
+    formatDuration(startTime, endTime) {
+        const diffMs = endTime - startTime;
+        const diffMins = Math.round(diffMs / (1000 * 60));
+        return `${diffMins} min`;
     }
 
     updateMetadata(data) {

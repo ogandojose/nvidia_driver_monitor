@@ -110,6 +110,34 @@
             </div>
         </div>
 
+        <!-- Historical Windows Summary Table -->
+        <div class="card table-card">
+            <h3>📊 Historical Windows Summary (Last 10 Windows)</h3>
+            <div class="table-container">
+                <table id="historical-windows-table">
+                    <thead>
+                        <tr>
+                            <th>Window Period</th>
+                            <th>Total Requests</th>
+                            <th>Success Rate</th>
+                            <th>Failed Requests</th>
+                            <th>Total Retries</th>
+                            <th>Avg Response Time</th>
+                            <th>Domains Active</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+                <div id="no-historical-windows" class="no-data-message" style="display: none;">
+                    <p>📊 No historical windows available yet</p>
+                    <p class="subtitle">Historical data will appear after the first window completes</p>
+                </div>
+            </div>
+        </div>
+
         <footer>
             <p>🔧 NVIDIA Driver Monitor Statistics Dashboard</p>
             <p>Window Duration: <span id="window-duration">10 minutes</span> | Max Stored Windows: <span id="max-windows">10</span></p>
