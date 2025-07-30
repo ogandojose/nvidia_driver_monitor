@@ -82,6 +82,17 @@ if [ ! -f "./static/js/statistics.js" ]; then
     exit 1
 fi
 
+# Check if required configuration files exist
+if [ ! -f "./supportedReleases.json" ]; then
+    print_error "supportedReleases.json not found. This file is required for the service."
+    exit 1
+fi
+
+if [ ! -f "./config.json" ]; then
+    print_error "config.json not found. This file is required for service configuration."
+    exit 1
+fi
+
 print_status "Starting NVIDIA Driver Monitor service installation..."
 
 # Create service user and group
@@ -111,10 +122,13 @@ chmod 755 "$INSTALL_DIR"
 print_status "Installing application files..."
 cp "./nvidia-web-server" "$INSTALL_DIR/"
 cp "./supportedReleases.json" "$INSTALL_DIR/"
+cp "./config.json" "$INSTALL_DIR/"
 chown "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR/nvidia-web-server"
 chown "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR/supportedReleases.json"
+chown "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR/config.json"
 chmod 755 "$INSTALL_DIR/nvidia-web-server"
 chmod 644 "$INSTALL_DIR/supportedReleases.json"
+chmod 644 "$INSTALL_DIR/config.json"
 
 # Copy templates directory
 print_status "Installing template files..."

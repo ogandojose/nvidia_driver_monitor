@@ -292,6 +292,10 @@ check-install-requirements:
 		echo "❌ supportedReleases.json not found."; \
 		exit 1; \
 	fi
+	@if [ ! -f "config.json" ]; then \
+		echo "❌ config.json not found."; \
+		exit 1; \
+	fi
 	@echo "✅ All installation requirements met."
 
 # Create distribution package
@@ -301,6 +305,7 @@ dist: web check-install-requirements
 	@mkdir -p dist/nvidia-driver-monitor
 	@cp $(WEB_BINARY) dist/nvidia-driver-monitor/
 	@cp supportedReleases.json dist/nvidia-driver-monitor/
+	@cp config.json dist/nvidia-driver-monitor/
 	@cp -r templates dist/nvidia-driver-monitor/
 	@cp -r static dist/nvidia-driver-monitor/
 	@cp *.service dist/nvidia-driver-monitor/
