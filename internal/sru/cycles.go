@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"nvidia_driver_monitor/internal/utils"
+
 	"gopkg.in/yaml.v2"
 )
 

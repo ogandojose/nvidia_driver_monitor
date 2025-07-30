@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"nvidia_driver_monitor/internal/utils"
+
 	"golang.org/x/net/html"
 )
 

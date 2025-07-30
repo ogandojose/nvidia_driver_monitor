@@ -7,33 +7,33 @@ import (
 
 // APIStats represents statistics for API calls
 type APIStats struct {
-	Domain           string        `json:"domain"`           // e.g., "launchpad.net", "nvidia.com", "kernel.ubuntu.com"
-	TotalRequests    int64         `json:"total_requests"`   // Total number of requests
-	SuccessfulReqs   int64         `json:"successful_reqs"`  // Number of successful requests
-	FailedReqs       int64         `json:"failed_reqs"`      // Number of failed requests
-	TotalRetries     int64         `json:"total_retries"`    // Total number of retries across all requests
-	AverageRespTime  float64       `json:"avg_response_ms"`  // Average response time in milliseconds
-	TotalRespTime    time.Duration `json:"-"`                // Internal: sum of all response times
+	Domain          string        `json:"domain"`          // e.g., "launchpad.net", "nvidia.com", "kernel.ubuntu.com"
+	TotalRequests   int64         `json:"total_requests"`  // Total number of requests
+	SuccessfulReqs  int64         `json:"successful_reqs"` // Number of successful requests
+	FailedReqs      int64         `json:"failed_reqs"`     // Number of failed requests
+	TotalRetries    int64         `json:"total_retries"`   // Total number of retries across all requests
+	AverageRespTime float64       `json:"avg_response_ms"` // Average response time in milliseconds
+	TotalRespTime   time.Duration `json:"-"`               // Internal: sum of all response times
 }
 
 // TimeWindow represents a 10-minute window of statistics
 type TimeWindow struct {
-	StartTime time.Time             `json:"start_time"`
-	EndTime   time.Time             `json:"end_time"`
-	Stats     map[string]*APIStats  `json:"stats"` // Domain -> APIStats
+	StartTime time.Time            `json:"start_time"`
+	EndTime   time.Time            `json:"end_time"`
+	Stats     map[string]*APIStats `json:"stats"` // Domain -> APIStats
 }
 
 // StatsCollector manages API statistics collection
 type StatsCollector struct {
-	mu          sync.RWMutex
-	windows     []*TimeWindow // Last 10 windows (100 minutes of data)
-	currentWin  *TimeWindow
-	maxWindows  int
+	mu         sync.RWMutex
+	windows    []*TimeWindow // Last 10 windows (100 minutes of data)
+	currentWin *TimeWindow
+	maxWindows int
 }
 
 var (
 	globalCollector *StatsCollector
-	once           sync.Once
+	once            sync.Once
 )
 
 // GetStatsCollector returns the global statistics collector instance
@@ -64,7 +64,7 @@ func (sc *StatsCollector) startWindowRotation() {
 	go func() {
 		ticker := time.NewTicker(10 * time.Minute)
 		defer ticker.Stop()
-		
+
 		for range ticker.C {
 			sc.rotateWindow()
 		}
@@ -75,15 +75,15 @@ func (sc *StatsCollector) startWindowRotation() {
 func (sc *StatsCollector) rotateWindow() {
 	sc.mu.Lock()
 	defer sc.mu.Unlock()
-	
+
 	// Add current window to history
 	sc.windows = append(sc.windows, sc.currentWin)
-	
+
 	// Keep only the last maxWindows
 	if len(sc.windows) > sc.maxWindows {
 		sc.windows = sc.windows[1:]
 	}
-	
+
 	// Start new window
 	sc.startNewWindow()
 }
@@ -94,7 +94,7 @@ func extractDomain(url string) string {
 	if len(url) < 8 {
 		return "unknown"
 	}
-	
+
 	// Remove protocol
 	start := 0
 	if url[:7] == "http://" {
@@ -102,7 +102,7 @@ func extractDomain(url string) string {
 	} else if url[:8] == "https://" {
 		start = 8
 	}
-	
+
 	// Find end of domain
 	end := len(url)
 	for i := start; i < len(url); i++ {
@@ -111,9 +111,9 @@ func extractDomain(url string) string {
 			break
 		}
 	}
-	
+
 	domain := url[start:end]
-	
+
 	// Categorize known domains
 	if domain == "api.launchpad.net" {
 		return "launchpad"
@@ -122,7 +122,7 @@ func extractDomain(url string) string {
 	} else if domain == "kernel.ubuntu.com" {
 		return "ubuntu-kernel"
 	}
-	
+
 	return domain
 }
 
@@ -130,26 +130,26 @@ func extractDomain(url string) string {
 func (sc *StatsCollector) RecordRequest(url string, duration time.Duration, retries int, success bool) {
 	sc.mu.Lock()
 	defer sc.mu.Unlock()
-	
+
 	domain := extractDomain(url)
-	
+
 	// Get or create stats for this domain in current window
 	if sc.currentWin.Stats[domain] == nil {
 		sc.currentWin.Stats[domain] = &APIStats{
 			Domain: domain,
 		}
 	}
-	
+
 	stats := sc.currentWin.Stats[domain]
 	stats.TotalRequests++
 	stats.TotalRetries += int64(retries)
 	stats.TotalRespTime += duration
-	
+
 	// Calculate average response time
 	if stats.TotalRequests > 0 {
 		stats.AverageRespTime = float64(stats.TotalRespTime.Nanoseconds()) / float64(stats.TotalRequests) / 1e6 // Convert to milliseconds
 	}
-	
+
 	if success {
 		stats.SuccessfulReqs++
 	} else {
@@ -161,7 +161,7 @@ func (sc *StatsCollector) RecordRequest(url string, duration time.Duration, retr
 func (sc *StatsCollector) GetCurrentWindowStats() map[string]*APIStats {
 	sc.mu.RLock()
 	defer sc.mu.RUnlock()
-	
+
 	// Create a copy to avoid race conditions
 	result := make(map[string]*APIStats)
 	for domain, stats := range sc.currentWin.Stats {
@@ -174,7 +174,7 @@ func (sc *StatsCollector) GetCurrentWindowStats() map[string]*APIStats {
 			AverageRespTime: stats.AverageRespTime,
 		}
 	}
-	
+
 	return result
 }
 
@@ -182,7 +182,7 @@ func (sc *StatsCollector) GetCurrentWindowStats() map[string]*APIStats {
 func (sc *StatsCollector) GetAllWindowsStats() []*TimeWindow {
 	sc.mu.RLock()
 	defer sc.mu.RUnlock()
-	
+
 	// Create a copy to avoid race conditions
 	result := make([]*TimeWindow, len(sc.windows))
 	for i, window := range sc.windows {
@@ -191,7 +191,7 @@ func (sc *StatsCollector) GetAllWindowsStats() []*TimeWindow {
 			EndTime:   window.EndTime,
 			Stats:     make(map[string]*APIStats),
 		}
-		
+
 		// Copy stats
 		for domain, stats := range window.Stats {
 			result[i].Stats[domain] = &APIStats{
@@ -204,7 +204,7 @@ func (sc *StatsCollector) GetAllWindowsStats() []*TimeWindow {
 			}
 		}
 	}
-	
+
 	return result
 }
 
@@ -212,7 +212,7 @@ func (sc *StatsCollector) GetAllWindowsStats() []*TimeWindow {
 func (sc *StatsCollector) GetCurrentWindowInfo() *TimeWindow {
 	sc.mu.RLock()
 	defer sc.mu.RUnlock()
-	
+
 	return &TimeWindow{
 		StartTime: sc.currentWin.StartTime,
 		EndTime:   sc.currentWin.EndTime,

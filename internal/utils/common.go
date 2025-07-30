@@ -42,9 +42,9 @@ func HTTPGetWithRetry(url string) (*http.Response, error) {
 	startTime := time.Now()
 	var lastErr error
 	var totalRetries int
-	
+
 	collector := stats.GetStatsCollector()
-	
+
 	for attempt := 1; attempt <= HTTPRetries; attempt++ {
 		resp, err := httpClient.Get(url)
 		if err == nil {
@@ -56,7 +56,7 @@ func HTTPGetWithRetry(url string) (*http.Response, error) {
 
 		lastErr = err
 		totalRetries = attempt - 1 // Don't count the first attempt as a retry
-		
+
 		if attempt < HTTPRetries {
 			waitTime := time.Duration(attempt) * time.Second
 			log.Printf("HTTP request failed (attempt %d/%d): %v. Retrying in %v...", attempt, HTTPRetries, err, waitTime)
@@ -65,11 +65,11 @@ func HTTPGetWithRetry(url string) (*http.Response, error) {
 			log.Printf("HTTP request failed after %d attempts: %v", HTTPRetries, err)
 		}
 	}
-	
+
 	// Record failed request
 	duration := time.Since(startTime)
 	collector.RecordRequest(url, duration, HTTPRetries-1, false)
-	
+
 	return nil, fmt.Errorf("all %d HTTP attempts failed, last error: %v", HTTPRetries, lastErr)
 }
 

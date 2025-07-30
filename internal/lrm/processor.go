@@ -26,7 +26,7 @@ var (
 	refreshTicker   *time.Ticker
 	stopRefresh     chan bool
 	// Configuration
-	MaxConcurrency  = 10 // Default concurrent workers for kernel querying
+	MaxConcurrency = 10 // Default concurrent workers for kernel querying
 )
 
 const (

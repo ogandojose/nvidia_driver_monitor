@@ -1044,7 +1044,7 @@ func (ws *WebService) lrmVerifierHandler(w http.ResponseWriter, r *http.Request)
 // statisticsPageHandler serves the statistics dashboard HTML page
 func (ws *WebService) statisticsPageHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	
+
 	// Read the statistics template
 	templatePath := filepath.Join(ws.templatePath, "statistics.html")
 	templateContent, err := os.ReadFile(templatePath)
@@ -1052,14 +1052,14 @@ func (ws *WebService) statisticsPageHandler(w http.ResponseWriter, r *http.Reque
 		http.Error(w, fmt.Sprintf("Error reading statistics template: %v", err), http.StatusInternalServerError)
 		return
 	}
-	
+
 	// Parse and execute the template
 	tmpl, err := template.New("statistics").Parse(string(templateContent))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error parsing statistics template: %v", err), http.StatusInternalServerError)
 		return
 	}
-	
+
 	// Execute the template with no data (JavaScript will load data dynamically)
 	if err := tmpl.Execute(w, nil); err != nil {
 		http.Error(w, fmt.Sprintf("Error executing statistics template: %v", err), http.StatusInternalServerError)
