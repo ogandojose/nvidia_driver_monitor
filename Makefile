@@ -213,7 +213,6 @@ help:
 	@echo "  console          - Build console application"
 	@echo "  web              - Build web server application"
 	@echo "  deps             - Install/update dependencies"
-	@echo "  dist             - Create distribution package with all files"
 	@echo ""
 	@echo "Development targets:"
 	@echo "  run-console      - Run console application"
@@ -241,6 +240,9 @@ help:
 	@echo "  service-logs     - Show service logs"
 	@echo "  troubleshoot-network - Run network troubleshooting"
 	@echo "  fix-network      - Fix network connectivity issues"
+	@echo ""
+	@echo "Distribution targets:"
+	@echo "  dist             - Create distribution package with all files"
 	@echo ""
 	@echo "Cleanup targets:"
 	@echo "  clean            - Remove all build artifacts and temporary files"
@@ -270,6 +272,22 @@ check-install-requirements:
 		echo "❌ Required template templates/lrm_verifier.html not found."; \
 		exit 1; \
 	fi
+	@if [ ! -f "templates/statistics.html" ]; then \
+		echo "❌ Required template templates/statistics.html not found."; \
+		exit 1; \
+	fi
+	@if [ ! -d "static" ]; then \
+		echo "❌ Static assets directory not found."; \
+		exit 1; \
+	fi
+	@if [ ! -f "static/css/statistics.css" ]; then \
+		echo "❌ Required CSS file static/css/statistics.css not found."; \
+		exit 1; \
+	fi
+	@if [ ! -f "static/js/statistics.js" ]; then \
+		echo "❌ Required JS file static/js/statistics.js not found."; \
+		exit 1; \
+	fi
 	@if [ ! -f "supportedReleases.json" ]; then \
 		echo "❌ supportedReleases.json not found."; \
 		exit 1; \
@@ -284,6 +302,7 @@ dist: web check-install-requirements
 	@cp $(WEB_BINARY) dist/nvidia-driver-monitor/
 	@cp supportedReleases.json dist/nvidia-driver-monitor/
 	@cp -r templates dist/nvidia-driver-monitor/
+	@cp -r static dist/nvidia-driver-monitor/
 	@cp *.service dist/nvidia-driver-monitor/
 	@cp install-service.sh dist/nvidia-driver-monitor/
 	@cp uninstall-service.sh dist/nvidia-driver-monitor/
