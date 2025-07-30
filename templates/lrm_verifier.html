@@ -297,6 +297,9 @@
         // Table filtering and sorting functionality
         let originalData = [];
         let currentData = [];
+        let refreshInterval = null;
+        let lastRefreshTime = null;
+        const REFRESH_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes in milliseconds
 
         // Function to simplify NVIDIA driver names (matches Go template function)
         function simplifyDriverName(driverName) {
@@ -310,6 +313,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Fetch data from API instead of parsing HTML table
             fetchKernelData();
+            
+            // Start automatic refresh
+            startAutoRefresh();
         });
 
         async function fetchKernelData() {
@@ -432,6 +438,124 @@
             
             // Apply initial filtering
             applyFilters();
+        }
+
+        // Auto-refresh functionality
+        function startAutoRefresh() {
+            // Update refresh status
+            updateRefreshStatus();
+            
+            // Set up interval for automatic refresh
+            refreshInterval = setInterval(() => {
+                refreshDataInBackground();
+            }, REFRESH_INTERVAL_MS);
+            
+            console.log('Auto-refresh started: data will refresh every 10 minutes');
+        }
+
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+                console.log('Auto-refresh stopped');
+            }
+        }
+
+        async function refreshDataInBackground() {
+            console.log('Refreshing LRM data in background...');
+            
+            try {
+                // Store current filter and sort settings
+                const currentFilters = {
+                    lrmSupported: document.getElementById('lrmSupportedFilter').value,
+                    series: document.getElementById('seriesFilter').value,
+                    routing: document.getElementById('routingFilter').value,
+                    supported: document.getElementById('supportedFilter').value,
+                    lts: document.getElementById('ltsFilter').value,
+                    esm: document.getElementById('esmFilter').value,
+                    development: document.getElementById('developmentFilter').value,
+                    sortBy: document.getElementById('sortBy').value,
+                    sortOrder: document.getElementById('sortOrder').value
+                };
+
+                // Fetch new data
+                const response = await fetch('/api/lrm');
+                const data = await response.json();
+                
+                // Update data arrays
+                originalData = data.data.kernel_results.map(kernel => {
+                    return {
+                        ...kernel,
+                        element: null,
+                        hasLRM: kernel.HasLRM,
+                        supported: kernel.Supported,
+                        development: kernel.Development,
+                        lts: kernel.LTS,
+                        esm: kernel.ESM
+                    };
+                });
+                
+                currentData = [...originalData];
+                
+                // Restore filter and sort settings
+                Object.keys(currentFilters).forEach(key => {
+                    const element = document.getElementById(key === 'lrmSupported' ? 'lrmSupportedFilter' : 
+                                                         key === 'sortBy' ? 'sortBy' :
+                                                         key === 'sortOrder' ? 'sortOrder' :
+                                                         key + 'Filter');
+                    if (element) {
+                        element.value = currentFilters[key];
+                    }
+                });
+                
+                // Repopulate filter dropdowns (in case new options were added)
+                populateSeriesFilter();
+                populateRoutingFilter();
+                
+                // Reapply filters and sorting
+                applyFilters();
+                applySorting();
+                
+                // Update refresh status
+                lastRefreshTime = new Date();
+                updateRefreshStatus();
+                
+                console.log('Background refresh completed successfully');
+                
+            } catch (error) {
+                console.error('Background refresh failed:', error);
+                // Don't stop auto-refresh on error, just log it
+            }
+        }
+
+        function updateRefreshStatus() {
+            lastRefreshTime = lastRefreshTime || new Date();
+            
+            // Find or create refresh status element
+            let statusElement = document.getElementById('refresh-status');
+            if (!statusElement) {
+                // Create refresh status element
+                statusElement = document.createElement('div');
+                statusElement.id = 'refresh-status';
+                statusElement.className = 'text-muted small mb-2';
+                statusElement.style.fontSize = '0.85em';
+                
+                // Insert it before the table
+                const table = document.getElementById('kernelTable');
+                if (table) {
+                    table.parentNode.insertBefore(statusElement, table);
+                }
+            }
+            
+            const timeString = lastRefreshTime.toLocaleTimeString();
+            statusElement.innerHTML = `
+                <i class="fas fa-sync-alt"></i> 
+                Last updated: ${timeString} | 
+                Auto-refresh: every 10 minutes | 
+                <a href="#" onclick="refreshDataInBackground(); return false;" style="text-decoration: none;">
+                    <i class="fas fa-redo"></i> Refresh now
+                </a>
+            `;
         }
 
         function populateSeriesFilter() {

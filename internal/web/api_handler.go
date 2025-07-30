@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"nvidia_driver_monitor/internal/lrm"
 )
@@ -223,4 +224,30 @@ func applyPagination(results []lrm.KernelLRMResult, limitStr, offsetStr string) 
 	}
 
 	return results[offset:end]
+}
+
+// CacheStatusHandler returns cache status information
+func (h *APIHandler) CacheStatusHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	// Get cache status from LRM module
+	status := lrm.GetCacheStatus()
+
+	// Add server timestamp
+	status["server_time"] = time.Now().Format("2006-01-02 15:04:05 UTC")
+
+	// Encode and send response
+	if err := json.NewEncoder(w).Encode(status); err != nil {
+		log.Printf("Error encoding cache status response: %v", err)
+		http.Error(w, `{"error": "Failed to encode response"}`, http.StatusInternalServerError)
+		return
+	}
 }

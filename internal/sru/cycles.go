@@ -3,10 +3,10 @@ package sru
 import (
 	"fmt"
 	"io"
-	"net/http"
 	"sort"
 	"time"
 
+	"nvidia_driver_monitor/internal/utils"
 	"gopkg.in/yaml.v2"
 )
 
@@ -35,13 +35,13 @@ type SRUCycles struct {
 func FetchSRUCycles() (*SRUCycles, error) {
 	url := "https://kernel.ubuntu.com/forgejo/kernel/kernel-versions/raw/branch/main/info/sru-cycle.yaml"
 
-	resp, err := http.Get(url)
+	resp, err := utils.HTTPGetWithRetry(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch SRU cycles: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("HTTP error: %d", resp.StatusCode)
 	}
 

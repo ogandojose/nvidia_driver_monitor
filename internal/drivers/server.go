@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"sort"
 	"time"
+
+	"nvidia_driver_monitor/internal/utils"
 )
 
 // AllBranches represents all driver branches
@@ -29,7 +30,7 @@ type DriverInfo struct {
 
 // GetLatestServerDriverVersions retrieves the latest server driver versions
 func GetLatestServerDriverVersions() (map[string]DriverInfo, AllBranches, error) {
-	resp, err := http.Get("https://docs.nvidia.com/datacenter/tesla/drivers/releases.json")
+	resp, err := utils.HTTPGetWithRetry("https://docs.nvidia.com/datacenter/tesla/drivers/releases.json")
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch server driver data: %w", err)
 	}

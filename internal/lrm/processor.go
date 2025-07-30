@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 	"os"
 	"sort"
 	"strings"
@@ -13,15 +12,21 @@ import (
 	"time"
 
 	"nvidia_driver_monitor/internal/packages"
+	"nvidia_driver_monitor/internal/utils"
 
 	"gopkg.in/yaml.v3"
 )
 
 // Global cache for LRM data
 var (
-	lrmCache    *LRMVerifierData
-	lrmCacheMux sync.RWMutex
-	cacheExpiry = 5 * time.Minute // Cache expiry duration - changed from 15 to 5 minutes
+	lrmCache        *LRMVerifierData
+	lrmCacheMux     sync.RWMutex
+	cacheExpiry     = 15 * time.Minute // Cache expiry duration (fallback)
+	refreshInterval = 10 * time.Minute // Background refresh interval
+	refreshTicker   *time.Ticker
+	stopRefresh     chan bool
+	// Configuration
+	MaxConcurrency  = 10 // Default concurrent workers for kernel querying
 )
 
 const (
@@ -48,12 +53,29 @@ type NvidiaDriverInfo struct {
 	Version    string // e.g., "470.256.02-0ubuntu0.24.04.1"
 }
 
+// SetHTTPConfig sets the HTTP timeout and retry configuration
+func SetHTTPConfig(timeout time.Duration, retries int) {
+	utils.SetHTTPConfig(timeout, retries)
+}
+
+// SetMaxConcurrency sets the maximum number of concurrent workers for kernel querying
+func SetMaxConcurrency(concurrency int) {
+	if concurrency < 1 {
+		concurrency = 1
+	}
+	if concurrency > 50 {
+		concurrency = 50
+	}
+	MaxConcurrency = concurrency
+	log.Printf("Set kernel query concurrency to %d workers", MaxConcurrency)
+}
+
 // FetchKernelLRMData fetches and processes kernel L-R-M information
 func FetchKernelLRMData(routing string) (*LRMVerifierData, error) {
 	log.Printf("Fetching kernel-series.yaml...")
 
 	// Download kernel-series.yaml
-	resp, err := http.Get(KernelSeriesURL)
+	resp, err := utils.HTTPGetWithRetry(KernelSeriesURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to download kernel-series.yaml: %v", err)
 	}
@@ -172,7 +194,7 @@ func FetchKernelLRMDataDebug(routing string) (*LRMVerifierData, error) {
 	log.Printf("Fetching kernel-series.yaml...")
 
 	// Download kernel-series.yaml
-	resp, err := http.Get(KernelSeriesURL)
+	resp, err := utils.HTTPGetWithRetry(KernelSeriesURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to download kernel-series.yaml: %v", err)
 	}
@@ -274,13 +296,17 @@ func FetchKernelLRMDataForAllRoutings() (*LRMVerifierData, error) {
 
 // fetchLatestVersions queries Launchpad API for latest package versions and NVIDIA drivers
 func fetchLatestVersions(kernels []KernelLRMResult) ([]KernelLRMResult, error) {
-	const maxConcurrency = 5
 	const dateThreshold = "2025-01-10"
 
+	totalKernels := len(kernels)
+	log.Printf("Fetching latest versions and NVIDIA driver information...")
+	log.Printf("Processing %d kernels with %d concurrent workers", totalKernels, MaxConcurrency)
+
 	// Step 1: Process each kernel to get LRM versions and NVIDIA driver versions
-	semaphore := make(chan bool, maxConcurrency)
+	semaphore := make(chan bool, MaxConcurrency)
 	var wg sync.WaitGroup
 	var mu sync.Mutex
+	var completed int
 
 	for i := range kernels {
 		wg.Add(1)
@@ -312,6 +338,14 @@ func fetchLatestVersions(kernels []KernelLRMResult) ([]KernelLRMResult, error) {
 				kernel.NvidiaDriverVersions = driverVersions
 				mu.Unlock()
 			}
+
+			// Update progress
+			mu.Lock()
+			completed++
+			if completed%10 == 0 || completed == totalKernels {
+				log.Printf("Progress: %d/%d kernels processed (%.1f%%)", completed, totalKernels, float64(completed)/float64(totalKernels)*100)
+			}
+			mu.Unlock()
 		}(i)
 	}
 
@@ -408,14 +442,14 @@ func queryPackageVersion(packageName, codename, dateThreshold string) string {
 
 	log.Printf("Querying %s in %s...", packageName, codename)
 
-	resp, err := http.Get(url)
+	resp, err := utils.HTTPGetWithRetry(url)
 	if err != nil {
 		log.Printf("Error querying %s: %v", packageName, err)
 		return "ERROR"
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != 200 {
 		log.Printf("HTTP error for %s: %d", packageName, resp.StatusCode)
 		return "ERROR"
 	}
@@ -708,13 +742,13 @@ func findDSCURL(packageName, codename, version string) (string, error) {
 
 	log.Printf("Querying Launchpad API for %s: %s", packageName, url)
 
-	resp, err := http.Get(url)
+	resp, err := utils.HTTPGetWithRetry(url)
 	if err != nil {
 		return "", fmt.Errorf("failed to query Launchpad API: %v", err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != 200 {
 		return "", fmt.Errorf("launchpad API returned HTTP %d", resp.StatusCode)
 	}
 
@@ -754,13 +788,13 @@ func fetchSourceFileUrls(selfLink string) ([]string, error) {
 	sourceFileUrlsURL := selfLink + "?ws.op=sourceFileUrls"
 
 	// Make the HTTP request
-	resp, err := http.Get(sourceFileUrlsURL)
+	resp, err := utils.HTTPGetWithRetry(sourceFileUrlsURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch source file URLs: %v", err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("source file URLs API returned HTTP %d", resp.StatusCode)
 	}
 
@@ -779,13 +813,13 @@ func downloadDSCFile(url, filename string) error {
 	log.Printf("Downloading DSC file: %s", url)
 
 	// Download the file
-	resp, err := http.Get(url)
+	resp, err := utils.HTTPGetWithRetry(url)
 	if err != nil {
 		return fmt.Errorf("failed to download DSC file: %v", err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != 200 {
 		return fmt.Errorf("HTTP %d when downloading DSC file", resp.StatusCode)
 	}
 
@@ -968,7 +1002,7 @@ func GetAvailableRoutings() ([]string, error) {
 	log.Printf("Fetching available routings from kernel-series.yaml...")
 
 	// Download kernel-series.yaml
-	resp, err := http.Get(KernelSeriesURL)
+	resp, err := utils.HTTPGetWithRetry(KernelSeriesURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to download kernel-series.yaml: %v", err)
 	}
@@ -1056,4 +1090,72 @@ func refreshLRMCache() (*LRMVerifierData, error) {
 // fetchLRMDataInternal is the internal function that actually fetches the data
 func fetchLRMDataInternal() (*LRMVerifierData, error) {
 	return FetchKernelLRMDataDebug("") // Use debug function to get ALL kernels, not just supported with LRM
+}
+
+// StartBackgroundRefresh starts the background cache refresh goroutine
+func StartBackgroundRefresh() {
+	if refreshTicker != nil {
+		log.Printf("Background LRM cache refresh already running")
+		return
+	}
+
+	log.Printf("Starting background LRM cache refresh every %v", refreshInterval)
+	refreshTicker = time.NewTicker(refreshInterval)
+	stopRefresh = make(chan bool)
+
+	go func() {
+		for {
+			select {
+			case <-refreshTicker.C:
+				log.Printf("Background refresh: updating LRM cache...")
+				start := time.Now()
+
+				_, err := refreshLRMCache()
+				if err != nil {
+					log.Printf("Background refresh failed: %v", err)
+				} else {
+					duration := time.Since(start)
+					log.Printf("Background refresh completed successfully in %v", duration)
+				}
+
+			case <-stopRefresh:
+				log.Printf("Background LRM cache refresh stopped")
+				return
+			}
+		}
+	}()
+}
+
+// StopBackgroundRefresh stops the background cache refresh goroutine
+func StopBackgroundRefresh() {
+	if refreshTicker != nil {
+		log.Printf("Stopping background LRM cache refresh...")
+		refreshTicker.Stop()
+		stopRefresh <- true
+		refreshTicker = nil
+	}
+}
+
+// GetCacheStatus returns information about the current cache status
+func GetCacheStatus() map[string]interface{} {
+	lrmCacheMux.RLock()
+	defer lrmCacheMux.RUnlock()
+
+	status := map[string]interface{}{
+		"initialized":               false,
+		"last_updated":              nil,
+		"cache_age_minutes":         0,
+		"kernel_count":              0,
+		"background_refresh_active": refreshTicker != nil,
+		"refresh_interval_minutes":  int(refreshInterval.Minutes()),
+	}
+
+	if lrmCache != nil {
+		status["initialized"] = lrmCache.IsInitialized
+		status["last_updated"] = lrmCache.LastUpdated.Format("2006-01-02 15:04:05 UTC")
+		status["cache_age_minutes"] = int(time.Since(lrmCache.LastUpdated).Minutes())
+		status["kernel_count"] = len(lrmCache.KernelResults)
+	}
+
+	return status
 }

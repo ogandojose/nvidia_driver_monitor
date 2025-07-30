@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"strings"
 
 	"nvidia_driver_monitor/internal/releases"
 	"nvidia_driver_monitor/internal/sru"
+	"nvidia_driver_monitor/internal/utils"
 
 	version "github.com/knqyf263/go-deb-version"
 )
@@ -64,14 +64,14 @@ func GetMaxSourceVersionsArchive(packageName string) (*SourceVersionPerSeries, e
 
 	fmt.Println("Query:", url)
 
-	resp, err := http.Get(url)
+	resp, err := utils.HTTPGetWithRetry(url)
 	if err != nil {
 		log.Fatalf("HTTP request failed: %v", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != 200 {
 		log.Fatalf("Unexpected status code: %d", resp.StatusCode)
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}

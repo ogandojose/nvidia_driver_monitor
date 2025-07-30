@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"strings"
 	"text/tabwriter"
+
+	"nvidia_driver_monitor/internal/utils"
 
 	version "github.com/knqyf263/go-deb-version"
 )
@@ -68,7 +69,7 @@ func GetMaxBinaryVersionsArchive(packageName string) (*BinaryVersionPerSeries, e
 
 	url := fmt.Sprintf("https://api.launchpad.net/devel/ubuntu/+archive/primary?ws.op=getPublishedBinaries&binary_name=%s&exact_match=true", packageName)
 
-	resp, err := http.Get(url)
+	resp, err := utils.HTTPGetWithRetry(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch data: %w", err)
 	}

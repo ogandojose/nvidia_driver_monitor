@@ -3,13 +3,13 @@ package drivers
 import (
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"regexp"
 	"strings"
 	"text/tabwriter"
 	"time"
 
+	"nvidia_driver_monitor/internal/utils"
 	"golang.org/x/net/html"
 )
 
@@ -50,7 +50,7 @@ func LogTableUDAReleases(entries []DriverEntry) {
 func GetNvidiaDriverEntries() ([]DriverEntry, error) {
 	url := "https://www.nvidia.com/en-us/drivers/unix/linux-amd64-display-archive/"
 
-	resp, err := http.Get(url)
+	resp, err := utils.HTTPGetWithRetry(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch page: %w", err)
 	}

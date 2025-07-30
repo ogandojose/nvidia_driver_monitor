@@ -94,6 +94,9 @@ func NewWebService() (*WebService, error) {
 	if err := lrm.InitializeLRMCache(); err != nil {
 		log.Printf("Warning: Failed to initialize LRM cache: %v", err)
 		// Don't fail startup, just log the warning
+	} else {
+		// Start background LRM cache refresh
+		lrm.StartBackgroundRefresh()
 	}
 
 	// Start background data refresh goroutine
@@ -124,6 +127,9 @@ func NewWebServiceWithConfig(cfg *config.Config, templatePath string) (*WebServi
 	if err := lrm.InitializeLRMCache(); err != nil {
 		log.Printf("Warning: Failed to initialize LRM cache: %v", err)
 		// Don't fail startup, just log the warning
+	} else {
+		// Start background LRM cache refresh
+		lrm.StartBackgroundRefresh()
 	}
 
 	// Start background data refresh goroutine with configured interval
@@ -216,7 +222,15 @@ func (ws *WebService) dataRefreshLoop() {
 
 // Stop gracefully stops the background data refresh
 func (ws *WebService) Stop() {
+	log.Printf("Stopping web service...")
+
+	// Stop the main data refresh loop
 	close(ws.stopChan)
+
+	// Stop the LRM background refresh
+	lrm.StopBackgroundRefresh()
+
+	log.Printf("Web service stopped")
 }
 
 // getCachedPackages returns a copy of the cached package data
@@ -729,6 +743,7 @@ func (ws *WebService) Start(addr string) error {
 		http.Handle("/api/lrm", rateLimiter.Middleware(http.HandlerFunc(apiHandler.LRMDataHandler)))
 		http.Handle("/api/health", rateLimiter.Middleware(http.HandlerFunc(apiHandler.HealthHandler)))
 		http.Handle("/api/routings", rateLimiter.Middleware(http.HandlerFunc(apiHandler.RoutingsHandler)))
+		http.Handle("/api/cache-status", rateLimiter.Middleware(http.HandlerFunc(apiHandler.CacheStatusHandler)))
 	} else {
 		http.HandleFunc("/", ws.indexHandler)
 		http.HandleFunc("/package", ws.packageHandler)
@@ -739,6 +754,7 @@ func (ws *WebService) Start(addr string) error {
 		http.HandleFunc("/api/lrm", apiHandler.LRMDataHandler)
 		http.HandleFunc("/api/health", apiHandler.HealthHandler)
 		http.HandleFunc("/api/routings", apiHandler.RoutingsHandler)
+		http.HandleFunc("/api/cache-status", apiHandler.CacheStatusHandler)
 	}
 
 	if ws.EnableHTTPS {
