@@ -72,3 +72,6 @@ test_*.go
 *.temp
 .*.swp
 .*.swo
+
+# Runtime data files
+statistics_data.json
