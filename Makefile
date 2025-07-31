@@ -288,6 +288,10 @@ check-install-requirements:
 		echo "❌ Required CSS file static/css/statistics.css not found."; \
 		exit 1; \
 	fi
+	@if [ ! -f "static/css/ubuntu-theme.css" ]; then \
+		echo "❌ Required CSS file static/css/ubuntu-theme.css not found."; \
+		exit 1; \
+	fi
 	@if [ ! -f "static/js/statistics.js" ]; then \
 		echo "❌ Required JS file static/js/statistics.js not found."; \
 		exit 1; \

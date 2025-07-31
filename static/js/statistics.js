@@ -156,13 +156,31 @@ class StatisticsDashboard {
     updateRequestVolumeChart(domains, stats) {
         const ctx = document.getElementById('requestVolumeChart').getContext('2d');
         
+        const colors = [
+            'rgba(233, 84, 32, 0.8)',   // Ubuntu orange
+            'rgba(68, 148, 159, 0.8)',  // Ubuntu teal
+            'rgba(146, 58, 102, 0.8)',  // Ubuntu purple
+            'rgba(203, 167, 184, 0.8)', // Ubuntu light purple
+            'rgba(255, 99, 132, 0.8)',  // Red
+            'rgba(255, 205, 86, 0.8)'   // Yellow
+        ];
+        
+        const borderColors = [
+            'rgba(233, 84, 32, 1)',
+            'rgba(68, 148, 159, 1)',
+            'rgba(146, 58, 102, 1)',
+            'rgba(203, 167, 184, 1)',
+            'rgba(255, 99, 132, 1)',
+            'rgba(255, 205, 86, 1)'
+        ];
+        
         const data = {
             labels: domains.map(d => this.formatDomainName(d)),
             datasets: [{
                 label: 'Total Requests',
                 data: domains.map(d => stats[d].total_requests),
-                backgroundColor: 'rgba(54, 162, 235, 0.8)',
-                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: colors.slice(0, domains.length),
+                borderColor: borderColors.slice(0, domains.length),
                 borderWidth: 2
             }]
         };

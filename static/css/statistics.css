@@ -1,4 +1,6 @@
-/* Statistics Dashboard CSS */
+/* Statistics Dashboard CSS - Ubuntu Theme */
+@import url('./ubuntu-theme.css');
+
 * {
     margin: 0;
     padding: 0;
@@ -6,10 +8,10 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: var(--ubuntu-font-family);
+    background: var(--ubuntu-text-bg-2);
     min-height: 100vh;
-    color: #333;
+    color: var(--ubuntu-text-bg-1);
 }
 
 .container {
@@ -20,36 +22,36 @@ body {
 
 /* Header Styles */
 header {
-    text-align: center;
+    text-align: left;
     margin-bottom: 30px;
-    color: white;
+    color: var(--ubuntu-text-bg-1);
 }
 
 header h1 {
     font-size: 2.5rem;
-    font-weight: 700;
+    font-weight: 300;
     margin-bottom: 10px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    text-shadow: none;
 }
 
 header h2 {
     font-size: 1.5rem;
-    font-weight: 400;
+    font-weight: 300;
     margin-bottom: 20px;
     opacity: 0.9;
 }
 
 .status-bar {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     gap: 30px;
-    background: rgba(255,255,255,0.1);
-    backdrop-filter: blur(10px);
+    background: var(--ubuntu-text-bg-4);
+    backdrop-filter: none;
     border-radius: 15px;
     padding: 15px 30px;
-    margin: 0 auto;
-    max-width: 600px;
+    margin: 0;
+    width: fit-content;
 }
 
 .status-item {
@@ -67,12 +69,12 @@ header h2 {
 }
 
 .indicator.active {
-    background: #4CAF50;
+    background: var(--ubuntu-accent-4);
     animation: pulse 2s infinite;
 }
 
 .indicator.refresh {
-    background: #2196F3;
+    background: var(--ubuntu-accent-3);
 }
 
 @keyframes pulse {
@@ -82,19 +84,20 @@ header h2 {
 }
 
 .refresh-button {
-    background: #4CAF50;
-    color: white;
+    background: var(--ubuntu-accent-3);
+    color: var(--ubuntu-text-bg-2);
     border: none;
     padding: 10px 20px;
-    border-radius: 25px;
+    border-radius: 4px;
     cursor: pointer;
     font-size: 0.9rem;
-    font-weight: 600;
+    font-weight: 400;
+    font-family: var(--ubuntu-font-family);
     transition: all 0.3s ease;
 }
 
 .refresh-button:hover {
-    background: #45a049;
+    background: var(--ubuntu-accent-2);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
@@ -109,25 +112,24 @@ header h2 {
 
 /* Card Styles */
 .card {
-    background: rgba(255,255,255,0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
+    background: var(--ubuntu-text-bg-2);
+    border-radius: 8px;
     padding: 25px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 1px solid var(--ubuntu-accent-5);
     transition: all 0.3s ease;
 }
 
 .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .card h3 {
     font-size: 1.3rem;
     margin-bottom: 20px;
-    color: #333;
-    font-weight: 600;
+    color: var(--ubuntu-text-bg-1);
+    font-weight: 400;
 }
 
 /* Summary Card */
@@ -144,22 +146,24 @@ header h2 {
 .stat-item {
     text-align: center;
     padding: 20px;
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    border-radius: 15px;
-    color: white;
+    background: var(--ubuntu-accent-4);
+    border-radius: 8px;
+    color: var(--ubuntu-text-bg-2);
 }
 
 .stat-value {
     display: block;
     font-size: 2rem;
-    font-weight: 700;
+    font-weight: 300;
     margin-bottom: 5px;
+    font-family: var(--ubuntu-font-family);
 }
 
 .stat-label {
     font-size: 0.9rem;
     opacity: 0.9;
-    font-weight: 500;
+    font-weight: 400;
+    font-family: var(--ubuntu-font-family);
 }
 
 /* Chart Containers */
@@ -204,66 +208,71 @@ header h2 {
 table {
     width: 100%;
     border-collapse: collapse;
-    background: white;
-    border-radius: 10px;
+    background: var(--ubuntu-text-bg-2);
+    border-radius: 8px;
     overflow: hidden;
+    font-family: var(--ubuntu-font-family);
 }
 
 thead {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: var(--ubuntu-accent-1);
+    color: var(--ubuntu-text-bg-1);
 }
 
 th, td {
     padding: 15px 20px;
     text-align: left;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--ubuntu-accent-5);
 }
 
 th {
-    font-weight: 600;
+    font-weight: 500;
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    font-family: var(--ubuntu-font-family);
 }
 
 tbody tr:hover {
-    background: #f8f9ff;
+    background: var(--ubuntu-text-bg-4);
 }
 
 .status-badge {
     padding: 5px 12px;
-    border-radius: 20px;
+    border-radius: 4px;
     font-size: 0.8rem;
-    font-weight: 600;
+    font-weight: 500;
     text-transform: uppercase;
+    font-family: var(--ubuntu-font-family);
 }
 
 .status-healthy {
-    background: #e8f5e8;
-    color: #2e7d2e;
+    background: var(--ubuntu-accent-4);
+    color: var(--ubuntu-text-bg-2);
 }
 
 .status-warning {
-    background: #fff3cd;
-    color: #856404;
+    background: var(--ubuntu-accent-1);
+    color: var(--ubuntu-text-bg-1);
 }
 
 .status-error {
-    background: #f8d7da;
-    color: #721c24;
+    background: var(--ubuntu-accent-3);
+    color: var(--ubuntu-text-bg-2);
 }
 
 /* Footer */
 footer {
-    text-align: center;
+    text-align: left;
     margin-top: 40px;
-    color: rgba(255,255,255,0.8);
-    font-size: 0.9rem;
+    padding-top: 20px;
+    border-top: 1px solid var(--ubuntu-accent-6);
+    color: var(--ubuntu-text-bg-3);
 }
 
 footer p {
     margin-bottom: 5px;
+    font-size: 0.9rem;
 }
 
 /* Responsive Design */

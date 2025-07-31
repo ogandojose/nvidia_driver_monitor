@@ -53,17 +53,17 @@ func GetStatsCollector() *StatsCollector {
 			saveInterval: 5 * time.Minute, // Save every 5 minutes
 			windows:      make([]*TimeWindow, 0, 100),
 		}
-		
+
 		// Load existing data if available
 		if err := globalCollector.loadFromFile(); err != nil {
 			log.Printf("Warning: Could not load existing statistics data: %v", err)
 		}
-		
+
 		// Start new window if none exists
 		if globalCollector.currentWin == nil {
 			globalCollector.startNewWindow()
 		}
-		
+
 		globalCollector.startWindowRotation()
 		globalCollector.startPeriodicSaving()
 	})
@@ -107,7 +107,7 @@ func (sc *StatsCollector) rotateWindow() {
 
 	// Start new window
 	sc.startNewWindow()
-	
+
 	// Save to file after rotation
 	go func() {
 		if err := sc.saveToFile(); err != nil {

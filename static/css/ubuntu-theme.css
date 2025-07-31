@@ -1,0 +1,278 @@
+/* Ubuntu Design System Colors and Typography */
+
+/* Ubuntu Font Family - Fallback to system fonts if not loaded */
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:ital,0,1;wght@300;400;500;700&display=swap');
+
+/* Ubuntu Color Palette */
+:root {
+    /* Text & Background Colors */
+    --ubuntu-text-bg-1: #000000;      /* All titles, main text */
+    --ubuntu-text-bg-2: #FFFFFF;      /* Background */
+    --ubuntu-text-bg-3: #666666;      /* Subtitle text, shaded boxes, text to emphasize, graphs */
+    --ubuntu-text-bg-4: #eeeeee;      /* Shaded boxes */
+    
+    /* Accent Colors */
+    --ubuntu-accent-1: #cba7b8;       /* Shaded boxes, graphs */
+    --ubuntu-accent-2: #923a66;       /* Text to emphasize, graphs */
+    --ubuntu-accent-3: #e95420;       /* Canonical product in graphs, illustrations */
+    --ubuntu-accent-4: #44949F;       /* Text to emphasize, graphs */
+    --ubuntu-accent-5: #e5e5e5;       /* Divider lines inside lists, tables, and agenda */
+    --ubuntu-accent-6: #c2c2c2;       /* Main divider lines */
+    
+    /* Link Color */
+    --ubuntu-link: #0066cc;           /* Links to websites */
+    
+    /* Font Family */
+    --ubuntu-font-family: 'Ubuntu', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Global Font and Base Styles */
+* {
+    font-family: var(--ubuntu-font-family);
+}
+
+body {
+    background-color: var(--ubuntu-text-bg-2);
+    color: var(--ubuntu-text-bg-1);
+    font-family: var(--ubuntu-font-family);
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--ubuntu-text-bg-1);
+    font-family: var(--ubuntu-font-family);
+    font-weight: 500;
+    margin: 0 0 1rem 0;
+}
+
+h1 {
+    font-size: 2.5rem;
+    font-weight: 300;
+}
+
+h2 {
+    font-size: 2rem;
+    font-weight: 300;
+}
+
+h3 {
+    font-size: 1.5rem;
+    font-weight: 400;
+}
+
+p {
+    color: var(--ubuntu-text-bg-1);
+    margin: 0 0 1rem 0;
+}
+
+/* Subtitle and secondary text */
+.subtitle, .secondary-text {
+    color: var(--ubuntu-text-bg-3);
+    font-size: 0.9rem;
+}
+
+/* Links */
+a {
+    color: var(--ubuntu-link);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--ubuntu-accent-3);
+    text-decoration: underline;
+}
+
+/* Buttons */
+.btn {
+    background-color: var(--ubuntu-accent-3);
+    color: var(--ubuntu-text-bg-2);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    font-family: var(--ubuntu-font-family);
+    font-weight: 400;
+    text-decoration: none;
+    display: inline-block;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    background-color: var(--ubuntu-accent-2);
+    color: var(--ubuntu-text-bg-2);
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-secondary {
+    background-color: var(--ubuntu-accent-4);
+}
+
+.btn-secondary:hover {
+    background-color: var(--ubuntu-accent-2);
+}
+
+/* Cards and Containers */
+.card {
+    background-color: var(--ubuntu-text-bg-2);
+    border: 1px solid var(--ubuntu-accent-5);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.shaded-box {
+    background-color: var(--ubuntu-text-bg-4);
+    border: 1px solid var(--ubuntu-accent-6);
+    border-radius: 4px;
+    padding: 1rem;
+    margin: 0.5rem 0;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--ubuntu-font-family);
+    background-color: var(--ubuntu-text-bg-2);
+}
+
+thead {
+    background-color: var(--ubuntu-accent-1);
+    color: var(--ubuntu-text-bg-1);
+}
+
+th, td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--ubuntu-accent-5);
+}
+
+th {
+    font-weight: 500;
+    color: var(--ubuntu-text-bg-1);
+}
+
+tbody tr:nth-child(even) {
+    background-color: var(--ubuntu-text-bg-4);
+}
+
+tbody tr:hover {
+    background-color: var(--ubuntu-accent-1);
+}
+
+/* Consistent Table Header Styles */
+.table-dark th {
+    background-color: var(--ubuntu-text-bg-3) !important;
+    color: var(--ubuntu-text-bg-2) !important;
+    border-color: var(--ubuntu-accent-6) !important;
+}
+
+/* Dividers */
+hr {
+    border: none;
+    height: 1px;
+    background-color: var(--ubuntu-accent-6);
+    margin: 1.5rem 0;
+}
+
+.divider-light {
+    background-color: var(--ubuntu-accent-5);
+}
+
+/* Status Indicators */
+.status-healthy {
+    background-color: var(--ubuntu-accent-4);
+    color: var(--ubuntu-text-bg-2);
+}
+
+.status-warning {
+    background-color: var(--ubuntu-accent-1);
+    color: var(--ubuntu-text-bg-1);
+}
+
+.status-error {
+    background-color: var(--ubuntu-accent-3);
+    color: var(--ubuntu-text-bg-2);
+}
+
+/* Status Colors - Consistent across all pages */
+.status-success, .table-success {
+    background-color: #28a745 !important;
+    color: var(--ubuntu-text-bg-2) !important;
+}
+
+.status-warning, .table-warning {
+    background-color: #ffc107 !important;
+    color: var(--ubuntu-text-bg-1) !important;
+}
+
+.status-danger, .table-danger {
+    background-color: #dc3545 !important;
+    color: var(--ubuntu-text-bg-2) !important;
+}
+
+/* Emphasis Text */
+.text-emphasis {
+    color: var(--ubuntu-accent-4);
+    font-weight: 500;
+}
+
+.text-emphasis-alt {
+    color: var(--ubuntu-accent-2);
+    font-weight: 500;
+}
+
+/* Container and Layout */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Navigation and Header */
+.header {
+    background-color: var(--ubuntu-text-bg-2);
+    border-bottom: 2px solid var(--ubuntu-accent-6);
+    padding: 1rem 0;
+}
+
+.nav-link {
+    color: var(--ubuntu-text-bg-3);
+    margin: 0 1rem;
+    font-weight: 400;
+}
+
+.nav-link:hover {
+    color: var(--ubuntu-accent-3);
+}
+
+/* Footer */
+.footer {
+    background-color: var(--ubuntu-text-bg-4);
+    color: var(--ubuntu-text-bg-3);
+    padding: 2rem 0;
+    margin-top: 3rem;
+    border-top: 1px solid var(--ubuntu-accent-6);
+}
