@@ -1199,12 +1199,67 @@
           "avg_response_ms": 3352.811197
         }
       }
+    },
+    {
+      "start_time": "2025-07-31T17:19:03.911765934+02:00",
+      "end_time": "2025-07-31T17:29:03.911765934+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 206.4456196186152
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 110.7079895
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 2217.168342
+        }
+      }
     }
   ],
   "current_window": {
-    "start_time": "2025-07-31T17:19:03.911765934+02:00",
-    "end_time": "2025-07-31T17:29:03.911765934+02:00",
-    "stats": {}
+    "start_time": "2025-07-31T17:29:03.919706895+02:00",
+    "end_time": "2025-07-31T17:39:03.919706895+02:00",
+    "stats": {
+      "launchpad": {
+        "domain": "launchpad",
+        "total_requests": 871,
+        "successful_reqs": 871,
+        "failed_reqs": 0,
+        "total_retries": 0,
+        "avg_response_ms": 75.46884362227325
+      },
+      "nvidia": {
+        "domain": "nvidia",
+        "total_requests": 2,
+        "successful_reqs": 2,
+        "failed_reqs": 0,
+        "total_retries": 0,
+        "avg_response_ms": 151.7092485
+      },
+      "ubuntu-kernel": {
+        "domain": "ubuntu-kernel",
+        "total_requests": 2,
+        "successful_reqs": 2,
+        "failed_reqs": 0,
+        "total_retries": 0,
+        "avg_response_ms": 1936.2493835
+      }
+    }
   },
-  "saved_at": "2025-07-31T17:19:03.911771146+02:00"
+  "saved_at": "2025-07-31T17:34:03.911303348+02:00"
 }

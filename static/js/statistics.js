@@ -50,7 +50,7 @@ class StatisticsDashboard {
             data: {
                 labels: [],
                 datasets: [{
-                    label: 'Total Requests',
+                    label: 'Average Response Time (ms)',
                     data: [],
                     borderColor: '#E95420',
                     backgroundColor: 'rgba(233, 84, 32, 0.1)',
@@ -60,10 +60,10 @@ class StatisticsDashboard {
                     pointRadius: 4,
                     pointHoverRadius: 6
                 }, {
-                    label: 'Success Rate (%)',
+                    label: 'Total Requests',
                     data: [],
-                    borderColor: '#38A169',
-                    backgroundColor: 'rgba(56, 161, 105, 0.1)',
+                    borderColor: '#3182CE',
+                    backgroundColor: 'rgba(49, 130, 206, 0.1)',
                     borderWidth: 2,
                     fill: false,
                     tension: 0.1,
@@ -110,10 +110,10 @@ class StatisticsDashboard {
                         position: 'left',
                         title: {
                             display: true,
-                            text: 'Total Requests'
+                            text: 'Response Time (ms)'
                         },
                         min: 0,
-                        max: 1000, // Fixed max to prevent auto-scaling
+                        max: 5000, // Fixed max for response time in ms
                         grid: {
                             color: 'rgba(0, 0, 0, 0.1)'
                         }
@@ -124,10 +124,10 @@ class StatisticsDashboard {
                         position: 'right',
                         title: {
                             display: true,
-                            text: 'Success Rate (%)'
+                            text: 'Total Requests'
                         },
                         min: 0,
-                        max: 100, // Fixed max for percentage
+                        max: 2000, // Fixed max for requests
                         grid: {
                             drawOnChartArea: false
                         }
@@ -409,22 +409,28 @@ class StatisticsDashboard {
             let totalRequests = 0;
             let totalSuccessful = 0;
             let totalRetries = 0;
+            let totalResponseTime = 0;
+            let domainCount = 0;
             
             if (window.stats) {
                 Object.values(window.stats).forEach(domainStats => {
                     totalRequests += domainStats.total_requests || 0;
                     totalSuccessful += domainStats.successful_reqs || 0;
                     totalRetries += domainStats.total_retries || 0;
+                    totalResponseTime += domainStats.avg_response_ms || 0;
+                    domainCount++;
                 });
             }
             
             const successRate = totalRequests > 0 ? (totalSuccessful / totalRequests * 100) : 0;
+            const avgResponseTime = domainCount > 0 ? (totalResponseTime / domainCount) : 0;
             
             return {
                 timestamp: window.start_time || window.end_time,
                 totalRequests,
                 successRate,
-                totalRetries
+                totalRetries,
+                avgResponseTime
             };
         });
 
@@ -434,19 +440,26 @@ class StatisticsDashboard {
             const date = new Date(item.timestamp);
             return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         });
+        const responseTimeData = processedData.map(item => item.avgResponseTime || 0);
         const requestData = processedData.map(item => item.totalRequests || 0);
-        const successRateData = processedData.map(item => item.successRate || 0);
 
-        // Update chart data
+        // Update chart data - response time is now the primary dataset (index 0)
         chart.data.labels = labels;
-        chart.data.datasets[0].data = requestData;
-        chart.data.datasets[1].data = successRateData;
+        chart.data.datasets[0].data = responseTimeData;
+        chart.data.datasets[1].data = requestData;
 
-        // Adjust Y-axis max based on actual data, but keep it stable
+        // Adjust Y-axis max based on actual response time data, but keep it stable
+        const maxResponseTime = Math.max(...responseTimeData);
+        if (maxResponseTime > 0) {
+            const newMax = Math.ceil(maxResponseTime * 1.2 / 1000) * 1000; // Round up to nearest 1000ms
+            chart.options.scales.y.max = Math.max(newMax, 1000);
+        }
+
+        // Adjust secondary Y-axis for requests
         const maxRequests = Math.max(...requestData);
         if (maxRequests > 0) {
-            const newMax = Math.ceil(maxRequests * 1.2 / 100) * 100; // Round up to nearest 100
-            chart.options.scales.y.max = Math.max(newMax, 100);
+            const newMaxRequests = Math.ceil(maxRequests * 1.2 / 100) * 100; // Round up to nearest 100
+            chart.options.scales.y1.max = Math.max(newMaxRequests, 100);
         }
 
         chart.update('none'); // Update without animation
@@ -558,8 +571,8 @@ class StatisticsDashboard {
             table.style.display = 'table';
         }
 
-        // Show last 10 windows (most recent first)
-        const recentWindows = historicalWindows.slice(-10).reverse();
+        // Show last 100 windows (most recent first)
+        const recentWindows = historicalWindows.slice(-100).reverse();
 
         recentWindows.forEach(window => {
             // Aggregate data from all domains in this window
