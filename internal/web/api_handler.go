@@ -154,7 +154,7 @@ func (h *APIHandler) StatisticsHandler(w http.ResponseWriter, r *http.Request) {
 		"historical_windows":      collector.GetAllWindowsStats(),
 		"server_time":             time.Now().Format("2006-01-02 15:04:05 UTC"),
 		"window_duration_minutes": 10,
-		"max_stored_windows":      10,
+		"max_stored_windows":      collector.GetMaxWindows(),
 	}
 
 	// Encode and send response

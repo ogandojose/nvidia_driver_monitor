@@ -1,6 +1,11 @@
 package stats
 
 import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -25,10 +30,12 @@ type TimeWindow struct {
 
 // StatsCollector manages API statistics collection
 type StatsCollector struct {
-	mu         sync.RWMutex
-	windows    []*TimeWindow // Last 10 windows (100 minutes of data)
-	currentWin *TimeWindow
-	maxWindows int
+	mu           sync.RWMutex
+	windows      []*TimeWindow // Last 100 windows (1000 minutes of data)
+	currentWin   *TimeWindow
+	maxWindows   int
+	persistFile  string // Path to persistence file
+	saveInterval time.Duration
 }
 
 var (
@@ -39,12 +46,26 @@ var (
 // GetStatsCollector returns the global statistics collector instance
 func GetStatsCollector() *StatsCollector {
 	once.Do(func() {
+		persistFile := "statistics_data.json"
 		globalCollector = &StatsCollector{
-			maxWindows: 10,
-			windows:    make([]*TimeWindow, 0, 10),
+			maxWindows:   100,
+			persistFile:  persistFile,
+			saveInterval: 5 * time.Minute, // Save every 5 minutes
+			windows:      make([]*TimeWindow, 0, 100),
 		}
-		globalCollector.startNewWindow()
+		
+		// Load existing data if available
+		if err := globalCollector.loadFromFile(); err != nil {
+			log.Printf("Warning: Could not load existing statistics data: %v", err)
+		}
+		
+		// Start new window if none exists
+		if globalCollector.currentWin == nil {
+			globalCollector.startNewWindow()
+		}
+		
 		globalCollector.startWindowRotation()
+		globalCollector.startPeriodicSaving()
 	})
 	return globalCollector
 }
@@ -79,13 +100,20 @@ func (sc *StatsCollector) rotateWindow() {
 	// Add current window to history
 	sc.windows = append(sc.windows, sc.currentWin)
 
-	// Keep only the last maxWindows
+	// Keep only the last maxWindows (100)
 	if len(sc.windows) > sc.maxWindows {
 		sc.windows = sc.windows[1:]
 	}
 
 	// Start new window
 	sc.startNewWindow()
+	
+	// Save to file after rotation
+	go func() {
+		if err := sc.saveToFile(); err != nil {
+			log.Printf("Error saving statistics after window rotation: %v", err)
+		}
+	}()
 }
 
 // extractDomain extracts domain from URL for categorization
@@ -218,4 +246,112 @@ func (sc *StatsCollector) GetCurrentWindowInfo() *TimeWindow {
 		EndTime:   sc.currentWin.EndTime,
 		Stats:     sc.GetCurrentWindowStats(),
 	}
+}
+
+// PersistentData represents the data structure for JSON persistence
+type PersistentData struct {
+	Windows    []*TimeWindow `json:"windows"`
+	CurrentWin *TimeWindow   `json:"current_window"`
+	SavedAt    time.Time     `json:"saved_at"`
+}
+
+// saveToFile saves current statistics to a JSON file
+func (sc *StatsCollector) saveToFile() error {
+	sc.mu.RLock()
+	defer sc.mu.RUnlock()
+
+	data := &PersistentData{
+		Windows:    sc.windows,
+		CurrentWin: sc.currentWin,
+		SavedAt:    time.Now(),
+	}
+
+	// Create directory if it doesn't exist
+	dir := filepath.Dir(sc.persistFile)
+	if dir != "." {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("failed to create directory: %w", err)
+		}
+	}
+
+	// Marshal to JSON
+	jsonData, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal statistics: %w", err)
+	}
+
+	// Write to temporary file first
+	tempFile := sc.persistFile + ".tmp"
+	if err := os.WriteFile(tempFile, jsonData, 0644); err != nil {
+		return fmt.Errorf("failed to write temporary file: %w", err)
+	}
+
+	// Atomic rename
+	if err := os.Rename(tempFile, sc.persistFile); err != nil {
+		return fmt.Errorf("failed to rename temporary file: %w", err)
+	}
+
+	return nil
+}
+
+// loadFromFile loads statistics from a JSON file
+func (sc *StatsCollector) loadFromFile() error {
+	// Check if file exists
+	if _, err := os.Stat(sc.persistFile); os.IsNotExist(err) {
+		return nil // No existing data, start fresh
+	}
+
+	// Read file
+	jsonData, err := os.ReadFile(sc.persistFile)
+	if err != nil {
+		return fmt.Errorf("failed to read statistics file: %w", err)
+	}
+
+	// Parse JSON
+	var data PersistentData
+	if err := json.Unmarshal(jsonData, &data); err != nil {
+		return fmt.Errorf("failed to parse statistics JSON: %w", err)
+	}
+
+	// Validate data age (don't load data older than 24 hours)
+	if time.Since(data.SavedAt) > 24*time.Hour {
+		log.Printf("Statistics data is older than 24 hours, starting fresh")
+		return nil
+	}
+
+	sc.mu.Lock()
+	defer sc.mu.Unlock()
+
+	// Load windows
+	sc.windows = data.Windows
+	if sc.windows == nil {
+		sc.windows = make([]*TimeWindow, 0, sc.maxWindows)
+	}
+
+	// Load current window if it's still valid (not expired)
+	if data.CurrentWin != nil && time.Now().Before(data.CurrentWin.EndTime) {
+		sc.currentWin = data.CurrentWin
+	}
+
+	log.Printf("Loaded %d historical windows from %s", len(sc.windows), sc.persistFile)
+	return nil
+}
+
+// startPeriodicSaving starts a goroutine that periodically saves statistics
+func (sc *StatsCollector) startPeriodicSaving() {
+	go func() {
+		ticker := time.NewTicker(sc.saveInterval)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			if err := sc.saveToFile(); err != nil {
+				log.Printf("Error during periodic save: %v", err)
+			}
+		}
+	}()
+}
+
+// GetMaxWindows returns the maximum number of windows stored
+func (sc *StatsCollector) GetMaxWindows() int {
+	return sc.maxWindows
 }

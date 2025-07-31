@@ -420,8 +420,9 @@ class StatisticsDashboard {
         // Sort windows by start time (newest first)
         allWindows.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
         
-        // Take only the last 10 windows
-        const recentWindows = allWindows.slice(0, 10);
+        // Take only the last 10 windows by default (can be configured)
+        const maxDisplayWindows = 10;
+        const recentWindows = allWindows.slice(0, maxDisplayWindows);
         
         recentWindows.forEach(window => {
             const stats = window.stats;

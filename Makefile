@@ -297,6 +297,7 @@ check-install-requirements:
 		exit 1; \
 	fi
 	@echo "✅ All installation requirements met."
+	@echo "Note: Statistics will be persisted to statistics_data.json (created automatically)"
 
 # Create distribution package
 .PHONY: dist
