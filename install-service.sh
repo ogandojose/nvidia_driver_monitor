@@ -123,6 +123,44 @@ mkdir -p "$INSTALL_DIR"
 chown "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR"
 chmod 755 "$INSTALL_DIR"
 
+# Check for existing statistics data and ask user
+STATS_FILE="$INSTALL_DIR/statistics_data.json"
+if [ -f "$STATS_FILE" ]; then
+    echo ""
+    print_warning "Existing statistics data found at: $STATS_FILE"
+    echo "This file contains historical monitoring data from previous runs."
+    echo ""
+    echo "Options:"
+    echo "  1) Keep existing data (recommended for upgrades)"
+    echo "  2) Remove existing data (fresh start)"
+    echo "  3) Backup existing data and start fresh"
+    echo ""
+    read -p "Enter your choice (1-3) [default: 1]: " STATS_CHOICE
+    
+    case "$STATS_CHOICE" in
+        2)
+            print_status "Removing existing statistics data..."
+            rm -f "$STATS_FILE"
+            print_status "Statistics data removed. Service will start with fresh data."
+            ;;
+        3)
+            BACKUP_FILE="$STATS_FILE.backup.$(date +%Y%m%d_%H%M%S)"
+            print_status "Backing up existing statistics data to: $BACKUP_FILE"
+            cp "$STATS_FILE" "$BACKUP_FILE"
+            rm -f "$STATS_FILE"
+            chown "$SERVICE_USER:$SERVICE_GROUP" "$BACKUP_FILE"
+            print_status "Statistics data backed up and removed. Service will start with fresh data."
+            ;;
+        1|"")
+            print_status "Keeping existing statistics data."
+            ;;
+        *)
+            print_warning "Invalid choice. Keeping existing statistics data (default)."
+            ;;
+    esac
+    echo ""
+fi
+
 # Copy binary and configuration files
 print_status "Installing application files..."
 cp "./nvidia-web-server" "$INSTALL_DIR/"
