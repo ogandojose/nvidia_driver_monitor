@@ -276,3 +276,66 @@ hr {
     margin-top: 3rem;
     border-top: 1px solid var(--ubuntu-accent-6);
 }
+
+/* Vanilla Framework Icon Customizations */
+.p-icon--success {
+    color: #28a745 !important;
+}
+
+.p-icon--warning {
+    color: #ffc107 !important;
+}
+
+.p-icon--error {
+    color: #dc3545 !important;
+}
+
+.p-icon--information {
+    color: var(--ubuntu-accent-4) !important;
+}
+
+.p-icon--statistics {
+    color: var(--ubuntu-accent-3) !important;
+}
+
+.p-icon--desktop {
+    color: var(--ubuntu-accent-3) !important;
+}
+
+.p-icon--settings {
+    color: var(--ubuntu-text-bg-3) !important;
+}
+
+.p-icon--restart {
+    color: var(--ubuntu-accent-4) !important;
+}
+
+.p-icon--history {
+    color: var(--ubuntu-accent-2) !important;
+}
+
+/* Button icons */
+.btn .p-icon--statistics,
+.btn .p-icon--arrow-right,
+.btn .p-icon--arrow-left {
+    margin-right: 0.5rem;
+    display: inline-block;
+}
+
+.btn .p-icon--arrow-right {
+    margin-right: 0;
+    margin-left: 0.5rem;
+}
+
+/* Status indicators with icons */
+.status-update .p-icon--restart {
+    color: var(--ubuntu-accent-4) !important;
+}
+
+.status-success .p-icon--success {
+    color: #28a745 !important;
+}
+
+.status-warning .p-icon--warning {
+    color: #ffc107 !important;
+}

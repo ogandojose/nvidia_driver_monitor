@@ -61,6 +61,11 @@ func GetLatestServerDriverVersions() (map[string]DriverInfo, AllBranches, error)
 		var latestDate time.Time
 
 		for _, info := range branch.DriverInfo {
+			// Skip entries with empty release dates
+			if info.ReleaseDate == "" {
+				continue
+			}
+
 			releaseDate, err := time.Parse("2006-01-02", info.ReleaseDate)
 			if err != nil {
 				log.Printf("Invalid date format for %s: %v", info.ReleaseDate, err)

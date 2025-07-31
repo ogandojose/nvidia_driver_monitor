@@ -173,11 +173,12 @@ func (ws *WebService) refreshData() error {
 	releases.UpdateSupportedUDAReleases(udaEntries, supportedReleases)
 	releases.UpdateSupportedReleasesWithLatestERD(allBranches, supportedReleases)
 
-	// Fetch SRU cycles
+	// Fetch SRU cycles with fallback
 	sruCycles, err := sru.FetchSRUCycles()
 	if err != nil {
 		log.Printf("Warning: Failed to fetch SRU cycles: %v", err)
-		sruCycles = nil
+		log.Printf("Using fallback SRU cycles with estimated dates")
+		sruCycles = sru.CreateFallbackSRUCycles()
 	} else {
 		sruCycles.AddPredictedCycles()
 	}

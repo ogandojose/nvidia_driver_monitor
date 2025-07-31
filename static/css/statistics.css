@@ -93,7 +93,7 @@ header h2 {
     font-size: 0.9rem;
     font-weight: 400;
     font-family: var(--ubuntu-font-family);
-    transition: all 0.3s ease;
+    /* transition: all 0.3s ease; DISABLED */
 }
 
 .refresh-button:hover {
@@ -117,12 +117,12 @@ header h2 {
     padding: 25px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     border: 1px solid var(--ubuntu-accent-5);
-    transition: all 0.3s ease;
+    /* transition: all 0.3s ease; DISABLED */
 }
 
 .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    /* transform: translateY(-2px); DISABLED */
+    /* box-shadow: 0 4px 12px rgba(0,0,0,0.15); DISABLED */
 }
 
 .card h3 {
@@ -344,7 +344,8 @@ footer p {
     width: 100%;
 }
 
-/* Animations */
+/* Animations - DISABLED FOR DEBUGGING */
+/*
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
@@ -360,3 +361,4 @@ footer p {
 .card:nth-child(4) { animation-delay: 0.4s; }
 .card:nth-child(5) { animation-delay: 0.5s; }
 .card:nth-child(6) { animation-delay: 0.6s; }
+*/

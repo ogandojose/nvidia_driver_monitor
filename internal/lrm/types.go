@@ -103,6 +103,6 @@ type NvidiaDriverStatus struct {
 	DriverName  string // e.g., "nvidia-graphics-drivers-535"
 	DSCVersion  string // Version from DSC file
 	DKMSVersion string // Version from DKMS/Updates-Security
-	Status      string // "✅ Up to date", "🔄 Update available", "⚠️ Unknown"
+	Status      string // "Up to date", "Update available", "Unknown"
 	FullString  string // Full driver string with version for display
 }

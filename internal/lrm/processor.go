@@ -692,7 +692,7 @@ func CompareDKMSVersions(nvidiaDriver, dkmsVersion string) string {
 
 			// If base versions are different, show update available
 			if nvidiaBase != dkmsBase {
-				return fmt.Sprintf("🔄 Update Available (%s)", dkmsVersion)
+				return fmt.Sprintf("Update Available (%s)", dkmsVersion)
 			}
 
 			// If base versions are same, compare Ubuntu revisions
@@ -700,13 +700,13 @@ func CompareDKMSVersions(nvidiaDriver, dkmsVersion string) string {
 			dkmsRev := strings.Join(dkmsParts[1:], "-")
 
 			if nvidiaRev != dkmsRev {
-				return fmt.Sprintf("🔄 Update Available (%s)", dkmsVersion)
+				return fmt.Sprintf("Update Available (%s)", dkmsVersion)
 			}
 		}
 	}
 
 	// Default case - show update available if versions don't match
-	return fmt.Sprintf("🔄 Update Available (%s)", dkmsVersion)
+	return fmt.Sprintf("Update Available (%s)", dkmsVersion)
 }
 
 // SimplifyNvidiaDriverName simplifies NVIDIA driver display names
@@ -941,9 +941,9 @@ func generateUpdateStatus(nvidiaDrivers []string, dkmsVersions map[string]string
 	if upToDateCount > 0 && updateAvailableCount == 0 {
 		return fmt.Sprintf("✅ All up to date (%d/%d)", upToDateCount, len(nvidiaDrivers))
 	} else if updateAvailableCount > 0 && upToDateCount == 0 {
-		return fmt.Sprintf("🔄 Updates available (%d/%d)", updateAvailableCount, len(nvidiaDrivers))
+		return fmt.Sprintf("Updates available (%d/%d)", updateAvailableCount, len(nvidiaDrivers))
 	} else if upToDateCount > 0 && updateAvailableCount > 0 {
-		return fmt.Sprintf("⚠️ Mixed (%d✅/%d🔄)", upToDateCount, updateAvailableCount)
+		return fmt.Sprintf("Mixed (%d up-to-date/%d updates)", upToDateCount, updateAvailableCount)
 	}
 
 	return "N/A"
@@ -986,7 +986,7 @@ func generateNvidiaDriverStatuses(nvidiaDrivers []string, dkmsVersions map[strin
 				if dscVersion == dkmsVersionClean {
 					status.Status = "✅ Up to date"
 				} else {
-					status.Status = "🔄 Update available"
+					status.Status = "Update available"
 				}
 			}
 		}

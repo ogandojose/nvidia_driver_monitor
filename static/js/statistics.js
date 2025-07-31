@@ -1,140 +1,164 @@
-// Statistics Dashboard JavaScript
 class StatisticsDashboard {
     constructor() {
         this.charts = {};
-        this.lastUpdateTime = null;
-        this.refreshInterval = null;
-        this.init();
+        this.isUpdating = false;
+        this.autoRefreshEnabled = true;
+        this.refreshInterval = 30000; // 30 seconds
+        this.refreshTimer = null;
+        
+        this.initializeDashboard();
     }
 
-    async init() {
-        await this.loadStatistics();
+    initializeDashboard() {
+        // Wait for DOM to be fully loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.init());
+        } else {
+            this.init();
+        }
+    }
+
+    init() {
         this.setupEventListeners();
+        this.initializeCharts();
+        this.loadInitialData();
         this.startAutoRefresh();
     }
 
     setupEventListeners() {
-        document.getElementById('refresh-btn').addEventListener('click', () => {
-            this.loadStatistics();
-        });
-    }
-
-    startAutoRefresh() {
-        // Refresh every 30 seconds
-        this.refreshInterval = setInterval(() => {
-            this.loadStatistics();
-        }, 30000);
-    }
-
-    async loadStatistics() {
-        try {
-            const response = await fetch('/api/statistics');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            this.updateDashboard(data);
-            this.updateLastUpdatedTime();
-        } catch (error) {
-            console.error('Error loading statistics:', error);
-            this.showError('Failed to load statistics data');
+        const refreshBtn = document.getElementById('refresh-btn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => this.refreshData());
         }
     }
 
-    updateDashboard(data) {
-        this.updateSummaryCards(data);
-        this.updateCharts(data);
-        this.updateDomainTable(data);
-        this.updateHistoricalWindowsTable(data);
-        this.updateMetadata(data);
+    initializeCharts() {
+        this.initializeHistoricalChart();
+        this.initializeResponseTimeChart();
+        this.initializeRequestVolumeChart();
+        this.initializeSuccessRateChart();
+        this.initializeRetryChart();
     }
 
-    updateSummaryCards(data) {
-        const stats = data.current_window.stats;
-        const domains = Object.keys(stats);
-        
-        let totalRequests = 0;
-        let totalSuccessful = 0;
-        let totalRetries = 0;
-        let totalResponseTime = 0;
-        let requestCount = 0;
+    initializeHistoricalChart() {
+        const ctx = document.getElementById('historicalChart');
+        if (!ctx) return;
 
-        domains.forEach(domain => {
-            const domainStats = stats[domain];
-            totalRequests += domainStats.total_requests;
-            totalSuccessful += domainStats.successful_reqs;
-            totalRetries += domainStats.total_retries;
-            totalResponseTime += domainStats.avg_response_ms * domainStats.total_requests;
-            requestCount += domainStats.total_requests;
-        });
-
-        const successRate = totalRequests > 0 ? ((totalSuccessful / totalRequests) * 100).toFixed(1) : 0;
-        const avgResponseTime = requestCount > 0 ? (totalResponseTime / requestCount).toFixed(1) : 0;
-
-        document.getElementById('total-requests').textContent = totalRequests.toLocaleString();
-        document.getElementById('success-rate').textContent = successRate + '%';
-        document.getElementById('avg-response-time').textContent = avgResponseTime + ' ms';
-        document.getElementById('total-retries').textContent = totalRetries.toLocaleString();
-    }
-
-    updateCharts(data) {
-        const stats = data.current_window.stats;
-        const domains = Object.keys(stats);
-
-        // Response Time Chart
-        this.updateResponseTimeChart(domains, stats);
-        
-        // Request Volume Chart
-        this.updateRequestVolumeChart(domains, stats);
-        
-        // Success Rate Chart
-        this.updateSuccessRateChart(domains, stats);
-        
-        // Retry Chart
-        this.updateRetryChart(domains, stats);
-        
-        // Historical Chart
-        this.updateHistoricalChart(data);
-    }
-
-    updateResponseTimeChart(domains, stats) {
-        const ctx = document.getElementById('responseTimeChart').getContext('2d');
-        
-        const data = {
-            labels: domains.map(d => this.formatDomainName(d)),
-            datasets: [{
-                label: 'Average Response Time (ms)',
-                data: domains.map(d => stats[d].avg_response_ms.toFixed(1)),
-                backgroundColor: [
-                    'rgba(255, 99, 132, 0.8)',
-                    'rgba(54, 162, 235, 0.8)',
-                    'rgba(255, 205, 86, 0.8)',
-                    'rgba(75, 192, 192, 0.8)',
-                    'rgba(153, 102, 255, 0.8)',
-                    'rgba(255, 159, 64, 0.8)'
-                ],
-                borderColor: [
-                    'rgba(255, 99, 132, 1)',
-                    'rgba(54, 162, 235, 1)',
-                    'rgba(255, 205, 86, 1)',
-                    'rgba(75, 192, 192, 1)',
-                    'rgba(153, 102, 255, 1)',
-                    'rgba(255, 159, 64, 1)'
-                ],
-                borderWidth: 2
-            }]
-        };
-
-        if (this.charts.responseTime) {
-            this.charts.responseTime.destroy();
-        }
-
-        this.charts.responseTime = new Chart(ctx, {
-            type: 'bar',
-            data: data,
+        // Fixed configuration to prevent jumping
+        const config = {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Total Requests',
+                    data: [],
+                    borderColor: '#E95420',
+                    backgroundColor: 'rgba(233, 84, 32, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }, {
+                    label: 'Success Rate (%)',
+                    data: [],
+                    borderColor: '#38A169',
+                    backgroundColor: 'rgba(56, 161, 105, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    yAxisID: 'y1'
+                }]
+            },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: false, // Disable all animations
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        display: true
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#E95420',
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Time Window'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Total Requests'
+                        },
+                        min: 0,
+                        max: 1000, // Fixed max to prevent auto-scaling
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Success Rate (%)'
+                        },
+                        min: 0,
+                        max: 100, // Fixed max for percentage
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        };
+
+        this.charts.historical = new Chart(ctx, config);
+    }
+
+    initializeResponseTimeChart() {
+        const ctx = document.getElementById('responseTimeChart');
+        if (!ctx) return;
+
+        this.charts.responseTime = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Average Response Time (ms)',
+                    data: [],
+                    backgroundColor: 'rgba(233, 84, 32, 0.8)',
+                    borderColor: '#E95420',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
                 plugins: {
                     legend: {
                         display: false
@@ -153,95 +177,57 @@ class StatisticsDashboard {
         });
     }
 
-    updateRequestVolumeChart(domains, stats) {
-        const ctx = document.getElementById('requestVolumeChart').getContext('2d');
-        
-        const colors = [
-            'rgba(233, 84, 32, 0.8)',   // Ubuntu orange
-            'rgba(68, 148, 159, 0.8)',  // Ubuntu teal
-            'rgba(146, 58, 102, 0.8)',  // Ubuntu purple
-            'rgba(203, 167, 184, 0.8)', // Ubuntu light purple
-            'rgba(255, 99, 132, 0.8)',  // Red
-            'rgba(255, 205, 86, 0.8)'   // Yellow
-        ];
-        
-        const borderColors = [
-            'rgba(233, 84, 32, 1)',
-            'rgba(68, 148, 159, 1)',
-            'rgba(146, 58, 102, 1)',
-            'rgba(203, 167, 184, 1)',
-            'rgba(255, 99, 132, 1)',
-            'rgba(255, 205, 86, 1)'
-        ];
-        
-        const data = {
-            labels: domains.map(d => this.formatDomainName(d)),
-            datasets: [{
-                label: 'Total Requests',
-                data: domains.map(d => stats[d].total_requests),
-                backgroundColor: colors.slice(0, domains.length),
-                borderColor: borderColors.slice(0, domains.length),
-                borderWidth: 2
-            }]
-        };
-
-        if (this.charts.requestVolume) {
-            this.charts.requestVolume.destroy();
-        }
+    initializeRequestVolumeChart() {
+        const ctx = document.getElementById('requestVolumeChart');
+        if (!ctx) return;
 
         this.charts.requestVolume = new Chart(ctx, {
             type: 'doughnut',
-            data: data,
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: [
+                        '#E95420', '#38A169', '#3182CE', '#805AD5',
+                        '#D69E2E', '#E53E3E', '#38B2AC', '#DD6B20'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: false,
                 plugins: {
                     legend: {
-                        position: 'bottom'
+                        position: 'right'
                     }
                 }
             }
         });
     }
 
-    updateSuccessRateChart(domains, stats) {
-        const ctx = document.getElementById('successRateChart').getContext('2d');
-        
-        const successRates = domains.map(d => {
-            const domainStats = stats[d];
-            return domainStats.total_requests > 0 ? 
-                ((domainStats.successful_reqs / domainStats.total_requests) * 100).toFixed(1) : 0;
-        });
-
-        const data = {
-            labels: domains.map(d => this.formatDomainName(d)),
-            datasets: [{
-                label: 'Success Rate (%)',
-                data: successRates,
-                backgroundColor: successRates.map(rate => 
-                    rate >= 95 ? 'rgba(75, 192, 192, 0.8)' : 
-                    rate >= 80 ? 'rgba(255, 205, 86, 0.8)' : 
-                    'rgba(255, 99, 132, 0.8)'
-                ),
-                borderColor: successRates.map(rate => 
-                    rate >= 95 ? 'rgba(75, 192, 192, 1)' : 
-                    rate >= 80 ? 'rgba(255, 205, 86, 1)' : 
-                    'rgba(255, 99, 132, 1)'
-                ),
-                borderWidth: 2
-            }]
-        };
-
-        if (this.charts.successRate) {
-            this.charts.successRate.destroy();
-        }
+    initializeSuccessRateChart() {
+        const ctx = document.getElementById('successRateChart');
+        if (!ctx) return;
 
         this.charts.successRate = new Chart(ctx, {
             type: 'bar',
-            data: data,
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Success Rate (%)',
+                    data: [],
+                    backgroundColor: 'rgba(56, 161, 105, 0.8)',
+                    borderColor: '#38A169',
+                    borderWidth: 1
+                }]
+            },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: false,
                 plugins: {
                     legend: {
                         display: false
@@ -261,38 +247,28 @@ class StatisticsDashboard {
         });
     }
 
-    updateRetryChart(domains, stats) {
-        const ctx = document.getElementById('retryChart').getContext('2d');
-        
-        const data = {
-            labels: domains.map(d => this.formatDomainName(d)),
-            datasets: [{
-                label: 'Total Retries',
-                data: domains.map(d => stats[d].total_retries),
-                backgroundColor: domains.map(d => 
-                    stats[d].total_retries > 10 ? 'rgba(255, 99, 132, 0.8)' :
-                    stats[d].total_retries > 0 ? 'rgba(255, 205, 86, 0.8)' :
-                    'rgba(75, 192, 192, 0.8)'
-                ),
-                borderColor: domains.map(d => 
-                    stats[d].total_retries > 10 ? 'rgba(255, 99, 132, 1)' :
-                    stats[d].total_retries > 0 ? 'rgba(255, 205, 86, 1)' :
-                    'rgba(75, 192, 192, 1)'
-                ),
-                borderWidth: 2
-            }]
-        };
-
-        if (this.charts.retry) {
-            this.charts.retry.destroy();
-        }
+    initializeRetryChart() {
+        const ctx = document.getElementById('retryChart');
+        if (!ctx) return;
 
         this.charts.retry = new Chart(ctx, {
-            type: 'bar',
-            data: data,
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Total Retries',
+                    data: [],
+                    borderColor: '#D69E2E',
+                    backgroundColor: 'rgba(214, 158, 46, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: false,
                 plugins: {
                     legend: {
                         display: false
@@ -303,7 +279,7 @@ class StatisticsDashboard {
                         beginAtZero: true,
                         title: {
                             display: true,
-                            text: 'Retry Count'
+                            text: 'Number of Retries'
                         }
                     }
                 }
@@ -311,236 +287,373 @@ class StatisticsDashboard {
         });
     }
 
-    updateHistoricalChart(data) {
-        const historicalWindows = data.historical_windows || [];
+    async loadInitialData() {
+        try {
+            await this.fetchAndUpdateData();
+        } catch (error) {
+            console.error('Failed to load initial data:', error);
+            this.showErrorMessage('Failed to load dashboard data');
+        }
+    }
+
+    async fetchAndUpdateData() {
+        if (this.isUpdating) return;
         
-        if (historicalWindows.length === 0) {
-            document.getElementById('historicalChart').style.display = 'none';
-            document.getElementById('no-historical-data').style.display = 'block';
+        this.isUpdating = true;
+        try {
+            const response = await fetch('/api/statistics');
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            this.updateDashboard(data);
+            this.updateLastUpdatedTime();
+            
+        } catch (error) {
+            console.error('Error fetching statistics:', error);
+            this.showErrorMessage('Failed to fetch statistics');
+        } finally {
+            this.isUpdating = false;
+        }
+    }
+
+    updateDashboard(data) {
+        this.updateSummaryCards(this.calculateSummaryFromCurrentWindow(data.current_window));
+        this.updateCharts(data);
+        this.updateDomainTable(this.extractDomainsFromCurrentWindow(data.current_window));
+        this.updateHistoricalWindowsTable(data.historical_windows || []);
+    }
+
+    calculateSummaryFromCurrentWindow(currentWindow) {
+        if (!currentWindow || !currentWindow.stats) {
+            return {
+                totalRequests: 0,
+                successRate: 0,
+                avgResponseTime: 0,
+                totalRetries: 0
+            };
+        }
+
+        let totalRequests = 0;
+        let totalSuccessful = 0;
+        let totalRetries = 0;
+        let totalResponseTime = 0;
+        let domainCount = 0;
+
+        Object.values(currentWindow.stats).forEach(domainStats => {
+            totalRequests += domainStats.total_requests || 0;
+            totalSuccessful += domainStats.successful_reqs || 0;
+            totalRetries += domainStats.total_retries || 0;
+            totalResponseTime += domainStats.avg_response_ms || 0;
+            domainCount++;
+        });
+
+        return {
+            totalRequests,
+            successRate: totalRequests > 0 ? (totalSuccessful / totalRequests * 100) : 0,
+            avgResponseTime: domainCount > 0 ? (totalResponseTime / domainCount) : 0,
+            totalRetries
+        };
+    }
+
+    updateSummaryCards(summary) {
+        const elements = {
+            'total-requests': summary.totalRequests || 0,
+            'success-rate': summary.successRate ? `${summary.successRate.toFixed(1)}%` : '0%',
+            'avg-response-time': summary.avgResponseTime ? `${summary.avgResponseTime.toFixed(0)} ms` : '0 ms',
+            'total-retries': summary.totalRetries || 0
+        };
+
+        Object.entries(elements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        });
+    }
+
+    updateCharts(data) {
+        this.updateHistoricalChart(data.historical_windows || []);
+        this.updateResponseTimeChart(this.extractDomainsFromCurrentWindow(data.current_window));
+        this.updateRequestVolumeChart(this.extractDomainsFromCurrentWindow(data.current_window));
+        this.updateSuccessRateChart(this.extractDomainsFromCurrentWindow(data.current_window));
+        this.updateRetryChart(data.historical_windows || []);
+    }
+
+    extractDomainsFromCurrentWindow(currentWindow) {
+        if (!currentWindow || !currentWindow.stats) return [];
+        
+        return Object.values(currentWindow.stats).map(domainStats => ({
+            domain: domainStats.domain,
+            totalRequests: domainStats.total_requests || 0,
+            successRate: domainStats.total_requests > 0 ? 
+                (domainStats.successful_reqs / domainStats.total_requests * 100) : 0,
+            failedRequests: domainStats.failed_reqs || 0,
+            avgResponseTime: domainStats.avg_response_ms || 0,
+            totalRetries: domainStats.total_retries || 0
+        }));
+    }
+
+    updateHistoricalChart(historicalData) {
+        if (!this.charts.historical || !historicalData.length) {
+            this.showNoHistoricalData(true);
             return;
         }
 
-        document.getElementById('historicalChart').style.display = 'block';
-        document.getElementById('no-historical-data').style.display = 'none';
+        this.showNoHistoricalData(false);
 
-        const ctx = document.getElementById('historicalChart').getContext('2d');
-        
-        // Prepare time series data
-        const allWindows = [data.current_window, ...historicalWindows].reverse();
-        const timeLabels = allWindows.map(window => 
-            new Date(window.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-        );
-        
-        // Get all unique domains
-        const allDomains = new Set();
-        allWindows.forEach(window => {
-            Object.keys(window.stats || {}).forEach(domain => allDomains.add(domain));
+        // Process historical windows data
+        const processedData = historicalData.map(window => {
+            // Aggregate data from all domains in this window
+            let totalRequests = 0;
+            let totalSuccessful = 0;
+            let totalRetries = 0;
+            
+            if (window.stats) {
+                Object.values(window.stats).forEach(domainStats => {
+                    totalRequests += domainStats.total_requests || 0;
+                    totalSuccessful += domainStats.successful_reqs || 0;
+                    totalRetries += domainStats.total_retries || 0;
+                });
+            }
+            
+            const successRate = totalRequests > 0 ? (totalSuccessful / totalRequests * 100) : 0;
+            
+            return {
+                timestamp: window.start_time || window.end_time,
+                totalRequests,
+                successRate,
+                totalRetries
+            };
         });
-        
-        const domainColors = {
-            'nvidia': 'rgba(76, 175, 80, 0.8)',
-            'launchpad': 'rgba(33, 150, 243, 0.8)',
-            'ubuntu-kernel': 'rgba(255, 152, 0, 0.8)',
-            'default': 'rgba(156, 39, 176, 0.8)'
-        };
-        
-        const datasets = Array.from(allDomains).map(domain => ({
-            label: this.formatDomainName(domain),
-            data: allWindows.map(window => {
-                const domainStats = window.stats && window.stats[domain];
-                return domainStats ? domainStats.avg_response_ms.toFixed(1) : 0;
-            }),
-            borderColor: domainColors[domain] || domainColors.default,
-            backgroundColor: (domainColors[domain] || domainColors.default).replace('0.8', '0.2'),
-            tension: 0.4,
-            fill: false
-        }));
 
-        if (this.charts.historical) {
-            this.charts.historical.destroy();
+        // Update data without recreating the chart
+        const chart = this.charts.historical;
+        const labels = processedData.map(item => {
+            const date = new Date(item.timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        });
+        const requestData = processedData.map(item => item.totalRequests || 0);
+        const successRateData = processedData.map(item => item.successRate || 0);
+
+        // Update chart data
+        chart.data.labels = labels;
+        chart.data.datasets[0].data = requestData;
+        chart.data.datasets[1].data = successRateData;
+
+        // Adjust Y-axis max based on actual data, but keep it stable
+        const maxRequests = Math.max(...requestData);
+        if (maxRequests > 0) {
+            const newMax = Math.ceil(maxRequests * 1.2 / 100) * 100; // Round up to nearest 100
+            chart.options.scales.y.max = Math.max(newMax, 100);
         }
 
-        this.charts.historical = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: timeLabels,
-                datasets: datasets
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top'
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Average Response Time (ms)'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Time Windows'
-                        }
-                    }
-                }
-            }
-        });
+        chart.update('none'); // Update without animation
     }
 
-    updateDomainTable(data) {
-        const stats = data.current_window.stats;
-        const tbody = document.querySelector('#domain-stats-table tbody');
+    updateResponseTimeChart(domains) {
+        if (!this.charts.responseTime) return;
+
+        const chart = this.charts.responseTime;
+        chart.data.labels = domains.map(d => d.domain);
+        chart.data.datasets[0].data = domains.map(d => d.avgResponseTime || 0);
+        chart.update('none');
+    }
+
+    updateRequestVolumeChart(domains) {
+        if (!this.charts.requestVolume) return;
+
+        const chart = this.charts.requestVolume;
+        chart.data.labels = domains.map(d => d.domain);
+        chart.data.datasets[0].data = domains.map(d => d.totalRequests || 0);
+        chart.update('none');
+    }
+
+    updateSuccessRateChart(domains) {
+        if (!this.charts.successRate) return;
+
+        const chart = this.charts.successRate;
+        chart.data.labels = domains.map(d => d.domain);
+        chart.data.datasets[0].data = domains.map(d => d.successRate || 0);
+        chart.update('none');
+    }
+
+    updateRetryChart(historicalData) {
+        if (!this.charts.retry) return;
+
+        // Process historical data to extract retry information
+        const processedData = historicalData.map(window => {
+            let totalRetries = 0;
+            
+            if (window.stats) {
+                Object.values(window.stats).forEach(domainStats => {
+                    totalRetries += domainStats.total_retries || 0;
+                });
+            }
+            
+            return {
+                timestamp: window.start_time || window.end_time,
+                totalRetries
+            };
+        });
+
+        const chart = this.charts.retry;
+        const labels = processedData.map(item => {
+            const date = new Date(item.timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        });
+        const retryData = processedData.map(item => item.totalRetries || 0);
+
+        chart.data.labels = labels;
+        chart.data.datasets[0].data = retryData;
+        chart.update('none');
+    }
+
+    updateDomainTable(domains) {
+        const table = document.getElementById('domain-stats-table');
+        if (!table) return;
+
+        const tbody = table.querySelector('tbody') || table.createTBody();
         tbody.innerHTML = '';
 
-        Object.keys(stats).forEach(domain => {
-            const domainStats = stats[domain];
-            const successRate = domainStats.total_requests > 0 ? 
-                ((domainStats.successful_reqs / domainStats.total_requests) * 100).toFixed(1) : 0;
-            
-            const status = this.getStatusBadge(successRate, domainStats.total_retries);
-            
+        domains.forEach(domain => {
             const row = tbody.insertRow();
+            // Match the HTML table column order: Domain, Total Requests, Success Rate, Failed Requests, Total Retries, Avg Response Time, Status
+            const status = domain.failedRequests === 0 ? 
+                '<span style="color: #38A169;">✓ Healthy</span>' : 
+                '<span style="color: #E53E3E;">⚠ Issues</span>';
+            
             row.innerHTML = `
-                <td><strong>${this.formatDomainName(domain)}</strong></td>
-                <td>${domainStats.total_requests.toLocaleString()}</td>
-                <td>${successRate}%</td>
-                <td>${domainStats.failed_reqs.toLocaleString()}</td>
-                <td>${domainStats.total_retries.toLocaleString()}</td>
-                <td>${domainStats.avg_response_ms.toFixed(1)} ms</td>
+                <td>${domain.domain}</td>
+                <td>${domain.totalRequests || 0}</td>
+                <td>${domain.successRate ? domain.successRate.toFixed(1) + '%' : '0%'}</td>
+                <td>${domain.failedRequests || 0}</td>
+                <td>${domain.totalRetries || 0}</td>
+                <td>${domain.avgResponseTime ? domain.avgResponseTime.toFixed(0) + ' ms' : '0 ms'}</td>
                 <td>${status}</td>
             `;
         });
     }
 
-    updateHistoricalWindowsTable(data) {
-        const tbody = document.querySelector('#historical-windows-table tbody');
-        const noDataMessage = document.getElementById('no-historical-windows');
+    updateHistoricalWindowsTable(historicalWindows) {
+        const table = document.getElementById('historical-windows-table');
+        const noDataEl = document.getElementById('no-historical-windows');
         
-        // Clear existing content
+        if (!table) return;
+
+        const tbody = table.querySelector('tbody') || table.createTBody();
         tbody.innerHTML = '';
-        
-        // Combine current window with historical windows for display
-        const allWindows = [...data.historical_windows];
-        
-        if (allWindows.length === 0) {
-            noDataMessage.style.display = 'block';
+
+        if (!historicalWindows.length) {
+            if (noDataEl) {
+                noDataEl.style.display = 'block';
+                table.style.display = 'none';
+            }
             return;
         }
-        
-        noDataMessage.style.display = 'none';
-        
-        // Sort windows by start time (newest first)
-        allWindows.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
-        
-        // Take only the last 10 windows by default (can be configured)
-        const maxDisplayWindows = 10;
-        const recentWindows = allWindows.slice(0, maxDisplayWindows);
-        
+
+        if (noDataEl) {
+            noDataEl.style.display = 'none';
+            table.style.display = 'table';
+        }
+
+        // Show last 10 windows (most recent first)
+        const recentWindows = historicalWindows.slice(-10).reverse();
+
         recentWindows.forEach(window => {
-            const stats = window.stats;
-            const domains = Object.keys(stats);
-            
-            // Calculate aggregated stats for this window
+            // Aggregate data from all domains in this window
             let totalRequests = 0;
             let totalSuccessful = 0;
             let totalFailed = 0;
             let totalRetries = 0;
             let totalResponseTime = 0;
-            let requestCount = 0;
-            
-            domains.forEach(domain => {
-                const domainStats = stats[domain];
-                totalRequests += domainStats.total_requests;
-                totalSuccessful += domainStats.successful_reqs;
-                totalFailed += domainStats.failed_reqs;
-                totalRetries += domainStats.total_retries;
-                totalResponseTime += domainStats.avg_response_ms * domainStats.total_requests;
-                requestCount += domainStats.total_requests;
-            });
-            
-            const successRate = totalRequests > 0 ? ((totalSuccessful / totalRequests) * 100).toFixed(1) : 0;
-            const avgResponseTime = requestCount > 0 ? (totalResponseTime / requestCount).toFixed(1) : 0;
-            
-            // Format time period
+            let domainCount = 0;
+
+            if (window.stats) {
+                Object.values(window.stats).forEach(domainStats => {
+                    totalRequests += domainStats.total_requests || 0;
+                    totalSuccessful += domainStats.successful_reqs || 0;
+                    totalFailed += domainStats.failed_reqs || 0;
+                    totalRetries += domainStats.total_retries || 0;
+                    totalResponseTime += domainStats.avg_response_ms || 0;
+                    domainCount++;
+                });
+            }
+
+            const successRate = totalRequests > 0 ? (totalSuccessful / totalRequests * 100) : 0;
+            const avgResponseTime = domainCount > 0 ? (totalResponseTime / domainCount) : 0;
+
+            // Format the window period
             const startTime = new Date(window.start_time);
             const endTime = new Date(window.end_time);
-            const timePeriod = this.formatTimePeriod(startTime, endTime);
-            const duration = this.formatDuration(startTime, endTime);
+            const windowPeriod = `${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
             
+            // Calculate duration
+            const durationMs = endTime.getTime() - startTime.getTime();
+            const durationMinutes = Math.round(durationMs / (1000 * 60));
+
             const row = tbody.insertRow();
+            // Columns: Window Period, Total Requests, Success Rate, Failed Requests, Total Retries, Avg Response Time, Domains Active, Duration
             row.innerHTML = `
-                <td><strong>${timePeriod}</strong></td>
-                <td>${totalRequests.toLocaleString()}</td>
-                <td>${successRate}%</td>
-                <td>${totalFailed.toLocaleString()}</td>
-                <td>${totalRetries.toLocaleString()}</td>
-                <td>${avgResponseTime} ms</td>
-                <td>${domains.length}</td>
-                <td>${duration}</td>
+                <td>${windowPeriod}</td>
+                <td>${totalRequests}</td>
+                <td>${successRate.toFixed(1)}%</td>
+                <td>${totalFailed}</td>
+                <td>${totalRetries}</td>
+                <td>${avgResponseTime.toFixed(0)} ms</td>
+                <td>${domainCount}</td>
+                <td>${durationMinutes} min</td>
             `;
         });
     }
 
-    formatTimePeriod(startTime, endTime) {
-        const start = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const end = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const date = startTime.toLocaleDateString([], { month: 'short', day: 'numeric' });
-        return `${date} ${start}-${end}`;
-    }
-
-    formatDuration(startTime, endTime) {
-        const diffMs = endTime - startTime;
-        const diffMins = Math.round(diffMs / (1000 * 60));
-        return `${diffMins} min`;
-    }
-
-    updateMetadata(data) {
-        document.getElementById('window-duration').textContent = data.window_duration_minutes + ' minutes';
-        document.getElementById('max-windows').textContent = data.max_stored_windows;
-    }
-
-    updateLastUpdatedTime() {
-        const now = new Date();
-        document.getElementById('last-updated').textContent = 
-            `Last Updated: ${now.toLocaleTimeString()}`;
-    }
-
-    formatDomainName(domain) {
-        const domainMap = {
-            'nvidia': 'NVIDIA',
-            'launchpad': 'Launchpad',
-            'ubuntu-kernel': 'Ubuntu Kernel',
-            'developer.nvidia.com': 'NVIDIA Developer',
-            'launchpad.net': 'Launchpad.net'
-        };
-        return domainMap[domain] || domain.charAt(0).toUpperCase() + domain.slice(1);
-    }
-
-    getStatusBadge(successRate, retries) {
-        if (successRate >= 95 && retries <= 5) {
-            return '<span class="status-badge status-healthy">Healthy</span>';
-        } else if (successRate >= 80 || retries <= 20) {
-            return '<span class="status-badge status-warning">Warning</span>';
-        } else {
-            return '<span class="status-badge status-error">Error</span>';
+    showNoHistoricalData(show) {
+        const noDataEl = document.getElementById('no-historical-data');
+        const chartEl = document.getElementById('historicalChart');
+        
+        if (noDataEl && chartEl) {
+            if (show) {
+                noDataEl.style.display = 'block';
+                chartEl.style.display = 'none';
+            } else {
+                noDataEl.style.display = 'none';
+                chartEl.style.display = 'block';
+            }
         }
     }
 
-    showError(message) {
+    showErrorMessage(message) {
         console.error(message);
-        // Update status to show error
-        document.getElementById('server-status').textContent = 'Connection Error';
-        document.querySelector('.indicator.active').style.background = '#f44336';
+        // Could add a toast notification here
+    }
+
+    updateLastUpdatedTime() {
+        const element = document.getElementById('last-updated');
+        if (element) {
+            element.textContent = `Last Updated: ${new Date().toLocaleTimeString()}`;
+        }
+    }
+
+    refreshData() {
+        this.fetchAndUpdateData();
+    }
+
+    startAutoRefresh() {
+        if (this.autoRefreshEnabled) {
+            this.refreshTimer = setInterval(() => {
+                this.fetchAndUpdateData();
+            }, this.refreshInterval);
+        }
+    }
+
+    stopAutoRefresh() {
+        if (this.refreshTimer) {
+            clearInterval(this.refreshTimer);
+            this.refreshTimer = null;
+        }
     }
 }
 
-// Initialize dashboard when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    new StatisticsDashboard();
-});
+// Initialize dashboard when the page loads
+const dashboard = new StatisticsDashboard();

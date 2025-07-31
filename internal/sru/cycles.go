@@ -265,3 +265,30 @@ func (sru *SRUCycles) GetMinimumCutoffAfterDate(driverReleaseDate string) *SRUCy
 
 	return minCycle
 }
+
+// CreateFallbackSRUCycles creates a fallback SRU cycles with estimated dates
+// This is used when the external SRU cycles service is unavailable
+func CreateFallbackSRUCycles() *SRUCycles {
+	now := time.Now()
+	cycles := &SRUCycles{}
+
+	// Create estimated SRU cycles for the next 12 months
+	// SRU cycles typically happen every 3 weeks (21 days)
+	for i := 0; i < 18; i++ { // 18 cycles = ~1 year
+		cycleDate := now.AddDate(0, 0, i*21) // Every 21 days
+		cycleName := fmt.Sprintf("2025.%02d.%02d", cycleDate.Month(), cycleDate.Day())
+
+		cycle := SRUCycle{
+			Name:           cycleName,
+			ReleaseDate:    cycleDate.Format("2006-01-02"),
+			ParsedDate:     cycleDate,
+			PredictedCycle: true,
+			Complete:       false,
+			Current:        i == 0, // First cycle is current
+		}
+
+		cycles.Cycles = append(cycles.Cycles, cycle)
+	}
+
+	return cycles
+}
