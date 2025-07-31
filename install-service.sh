@@ -71,6 +71,11 @@ if [ ! -f "./templates/statistics.html" ]; then
     exit 1
 fi
 
+if [ ! -f "./templates/index.html" ]; then
+    print_error "Required template file templates/index.html not found."
+    exit 1
+fi
+
 # Check if required static files exist
 if [ ! -f "./static/css/statistics.css" ]; then
     print_error "Required CSS file static/css/statistics.css not found."

@@ -276,6 +276,10 @@ check-install-requirements:
 		echo "❌ Required template templates/statistics.html not found."; \
 		exit 1; \
 	fi
+	@if [ ! -f "templates/index.html" ]; then \
+		echo "❌ Required template templates/index.html not found."; \
+		exit 1; \
+	fi
 	@if [ ! -d "static" ]; then \
 		echo "❌ Static assets directory not found."; \
 		exit 1; \

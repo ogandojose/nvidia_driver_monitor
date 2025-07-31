@@ -39,10 +39,10 @@ test-*
 # Log files
 *.log
 
-# HTML output files
-*.html
+# HTML output files (but allow templates)
 debug_*.html
 test_*.html
+output_*.html
 
 # Environment files
 .env
