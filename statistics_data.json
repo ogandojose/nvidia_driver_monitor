@@ -209,12 +209,792 @@
           "avg_response_ms": 444.71533066666666
         }
       }
+    },
+    {
+      "start_time": "2025-07-31T10:55:33.765754707+02:00",
+      "end_time": "2025-07-31T11:05:33.765754707+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 5,
+          "avg_response_ms": 1122.3239023246313
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 127.467572
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 444.975798
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T11:05:33.767096154+02:00",
+      "end_time": "2025-07-31T11:15:33.767096154+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 6,
+          "avg_response_ms": 1390.3850370124858
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 125.8298855
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 342.271062
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T11:15:33.767024119+02:00",
+      "end_time": "2025-07-31T11:25:33.767024119+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 1,
+          "avg_response_ms": 1251.3191706708285
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 123.41527925
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 312.0690143333333
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T11:25:33.765973258+02:00",
+      "end_time": "2025-07-31T11:35:33.765973258+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 3,
+          "avg_response_ms": 1154.381291879682
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 137.910735
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 393.9503056666667
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T11:35:33.766742238+02:00",
+      "end_time": "2025-07-31T11:45:33.766742238+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 1,
+          "avg_response_ms": 532.5561337911464
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 122.4257335
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 2081.469201666667
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T11:45:33.766018267+02:00",
+      "end_time": "2025-07-31T11:55:33.766018267+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 127.67111421452894
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 92.59879025
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 3,
+          "avg_response_ms": 19283.733721
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T11:55:33.789823602+02:00",
+      "end_time": "2025-07-31T12:05:33.789823602+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 126.41328854029513
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 174.3904375
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 396.251609
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T12:05:33.765751554+02:00",
+      "end_time": "2025-07-31T12:15:33.765751554+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 24,
+          "avg_response_ms": 2694.216745788876
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 130.572527
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 412.2056406666667
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T12:15:33.79039869+02:00",
+      "end_time": "2025-07-31T12:25:33.79039869+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 12,
+          "avg_response_ms": 2136.4013415573213
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 136.2844795
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 513.1791273333333
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T12:25:33.767155107+02:00",
+      "end_time": "2025-07-31T12:35:33.767155107+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 1,
+          "avg_response_ms": 877.3717045720772
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 96.40047575
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 454.056107
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T12:35:33.76633447+02:00",
+      "end_time": "2025-07-31T12:45:33.76633447+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 5,
+          "avg_response_ms": 1463.0977839114641
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 209.63448475
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 498.033017
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T12:45:33.766968091+02:00",
+      "end_time": "2025-07-31T12:55:33.766968091+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 628.9111541884222
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 61.89605325
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 374.493503
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T12:55:33.772698163+02:00",
+      "end_time": "2025-07-31T13:05:33.772698163+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 26,
+          "avg_response_ms": 2872.9666469636772
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 98.672349
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 364.86563366666667
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T13:05:33.769593844+02:00",
+      "end_time": "2025-07-31T13:15:33.769593844+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 10,
+          "avg_response_ms": 2046.5352583144154
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 127.610805
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 430.481578
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T13:15:33.765872361+02:00",
+      "end_time": "2025-07-31T13:25:33.765872361+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 8,
+          "avg_response_ms": 1517.4698224733256
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 79.018473
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 378.3460153333333
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T13:25:33.766033455+02:00",
+      "end_time": "2025-07-31T13:35:33.766033455+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 11,
+          "avg_response_ms": 2064.866859365494
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 99.492846
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 348.7770223333333
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T13:35:33.767070899+02:00",
+      "end_time": "2025-07-31T13:45:33.767070899+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 3,
+          "avg_response_ms": 1231.8156568013621
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 123.8685685
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 408.5564386666667
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T13:45:33.767658832+02:00",
+      "end_time": "2025-07-31T13:55:33.767658832+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 334.57374862883086
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 128.62605
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 4232.303168666666
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T13:55:33.767062938+02:00",
+      "end_time": "2025-07-31T14:05:33.767062938+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 20,
+          "successful_reqs": 20,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 156.08515755000002
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 117.3227285
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 6074.995515333333
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T14:05:33.767734383+02:00",
+      "end_time": "2025-07-31T14:15:33.767734383+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 20,
+          "successful_reqs": 20,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 2244.7990994
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 151.1838375
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 5575.004837666667
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T14:15:33.766081812+02:00",
+      "end_time": "2025-07-31T14:25:33.766081812+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 1051.3785747400682
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 142.6826785
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 3,
+          "avg_response_ms": 18801.55409466667
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T14:25:33.767078643+02:00",
+      "end_time": "2025-07-31T14:35:33.767078643+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 1,
+          "avg_response_ms": 752.2442193110103
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 98.24480675
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 393.2718293333333
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T14:35:33.766535445+02:00",
+      "end_time": "2025-07-31T14:45:33.766535445+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 385.3769315368899
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 110.849481
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 555.805577
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T14:45:33.766491168+02:00",
+      "end_time": "2025-07-31T14:55:33.766491168+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 160.10549041770716
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 210.37912975
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 548.928506
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T14:55:33.790101696+02:00",
+      "end_time": "2025-07-31T15:05:33.790101696+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 107.46731409307606
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 96.07554975
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 613.5028353333333
+        }
+      }
+    },
+    {
+      "start_time": "2025-07-31T15:05:33.790447603+02:00",
+      "end_time": "2025-07-31T15:15:33.790447603+02:00",
+      "stats": {
+        "launchpad": {
+          "domain": "launchpad",
+          "total_requests": 881,
+          "successful_reqs": 881,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 111.31828919863791
+        },
+        "nvidia": {
+          "domain": "nvidia",
+          "total_requests": 4,
+          "successful_reqs": 4,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 86.3883565
+        },
+        "ubuntu-kernel": {
+          "domain": "ubuntu-kernel",
+          "total_requests": 3,
+          "successful_reqs": 3,
+          "failed_reqs": 0,
+          "total_retries": 0,
+          "avg_response_ms": 1007.925075
+        }
+      }
     }
   ],
   "current_window": {
-    "start_time": "2025-07-31T10:55:33.765754707+02:00",
-    "end_time": "2025-07-31T11:05:33.765754707+02:00",
+    "start_time": "2025-07-31T15:15:33.766887241+02:00",
+    "end_time": "2025-07-31T15:25:33.766887241+02:00",
     "stats": {}
   },
-  "saved_at": "2025-07-31T10:55:33.765757541+02:00"
+  "saved_at": "2025-07-31T15:15:33.76689236+02:00"
 }
