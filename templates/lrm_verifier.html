@@ -9,8 +9,10 @@
     <link href="/static/css/ubuntu-theme.css" rel="stylesheet">
     <style>
         .container-fluid { 
-            max-width: 1600px; 
+            max-width: 100%; /* Use full width instead of limiting to 1600px */
             font-family: var(--ubuntu-font-family);
+            padding-left: 1rem;
+            padding-right: 1rem;
         }
         .table-success { 
             background-color: #28a745 !important;
@@ -48,6 +50,207 @@
         .card-header h6 { 
             margin-bottom: 0; 
         }
+        
+        /* Compact control panel styling */
+        .card-body.py-2 {
+            padding-top: 0.5rem !important;
+            padding-bottom: 0.5rem !important;
+        }
+        
+        .form-label.mb-1 {
+            margin-bottom: 0.25rem !important;
+            font-weight: 500;
+        }
+        
+        .form-label.small {
+            font-size: 0.8rem;
+        }
+        
+        /* Statistics in header styling */
+        .card-header .d-flex {
+            font-size: 0.9rem;
+        }
+        
+        .card-header .text-muted.small {
+            font-size: 0.8rem;
+        }
+        
+        /* Horizontal filter layout styling */
+        .gap-3 {
+            gap: 1rem !important;
+        }
+        
+        .vr {
+            width: 1px;
+            height: 30px;
+            background-color: #dee2e6;
+        }
+        
+        .text-nowrap {
+            white-space: nowrap;
+        }
+        
+        /* Responsive adjustments for horizontal layout */
+        @media (max-width: 1200px) {
+            .gap-3 {
+                gap: 0.75rem !important;
+            }
+            
+            .form-label.small {
+                font-size: 0.75rem;
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .d-flex.flex-wrap {
+                flex-direction: column;
+                align-items: flex-start !important;
+            }
+            
+            .d-flex.align-items-center {
+                margin-bottom: 0.5rem;
+            }
+            
+            .vr {
+                display: none;
+            }
+        }
+        
+        /* Optimize table column widths with fixed layout */
+        .kernel-table {
+            font-size: 0.875rem; /* Slightly smaller font */
+            table-layout: fixed; /* Fixed layout for predictable column widths */
+            width: 100%; /* Ensure table uses full available width */
+        }
+        
+        .kernel-table th,
+        .kernel-table td {
+            padding: 0.4rem; /* Further reduce padding */
+            vertical-align: middle;
+            overflow: hidden; /* Prevent content overflow */
+            text-overflow: ellipsis; /* Add ellipsis for long content */
+        }
+        
+        /* Fixed column widths that guarantee rightmost column visibility */
+        .kernel-table th:nth-child(1), /* Series */
+        .kernel-table td:nth-child(1) {
+            width: 7%;
+        }
+        
+        .kernel-table th:nth-child(2), /* Codename */
+        .kernel-table td:nth-child(2) {
+            width: 9%;
+        }
+        
+        .kernel-table th:nth-child(3), /* Source & Version */
+        .kernel-table td:nth-child(3) {
+            width: 16%;
+        }
+        
+        .kernel-table th:nth-child(4), /* Routing */
+        .kernel-table td:nth-child(4) {
+            width: 7%;
+            text-align: center;
+        }
+        
+        .kernel-table th:nth-child(5), /* Supported */
+        .kernel-table td:nth-child(5) {
+            width: 4%;
+            text-align: center;
+        }
+        
+        .kernel-table th:nth-child(6), /* LTS */
+        .kernel-table td:nth-child(6) {
+            width: 3%;
+            text-align: center;
+        }
+        
+        .kernel-table th:nth-child(7), /* ESM */
+        .kernel-table td:nth-child(7) {
+            width: 3%;
+            text-align: center;
+        }
+        
+        .kernel-table th:nth-child(8), /* Development */
+        .kernel-table td:nth-child(8) {
+            width: 4%;
+            text-align: center;
+        }
+        
+        .kernel-table th:nth-child(9), /* L-R-M Package */
+        .kernel-table td:nth-child(9) {
+            width: 18%;
+        }
+        
+        .kernel-table th:nth-child(10), /* NVIDIA Driver */
+        .kernel-table td:nth-child(10) {
+            width: 25%; /* Increased from 23% due to space saved from icon columns */
+        }
+        
+        /* Make badges smaller */
+        .kernel-table .badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        
+        /* Compact the NVIDIA driver status display */
+        .kernel-table .small {
+            font-size: 0.7rem;
+            line-height: 1.2;
+        }
+        
+        /* Special handling for NVIDIA driver status column */
+        .kernel-table td:nth-child(10) {
+            width: 23%; /* Larger allocation for the rightmost column */
+            overflow: visible; /* Allow content to be fully visible */
+        }
+        
+        .kernel-table td:nth-child(10) .mb-1 {
+            margin-bottom: 0.25rem !important;
+            font-size: 0.8rem;
+        }
+        
+        .kernel-table td:nth-child(10) .badge {
+            font-size: 0.65rem;
+            padding: 0.2rem 0.4rem;
+            white-space: nowrap;
+        }
+        
+        /* Ensure the table uses full width and is always fully visible */
+        .table-responsive {
+            min-height: 400px;
+            overflow-x: auto;
+            width: 100%;
+        }
+        
+        /* Media query for smaller screens */
+        @media (max-width: 1200px) {
+            .kernel-table {
+                font-size: 0.8rem;
+            }
+            
+            .kernel-table th,
+            .kernel-table td {
+                padding: 0.3rem;
+            }
+            
+            .kernel-table td:nth-child(10) .badge {
+                font-size: 0.6rem;
+                padding: 0.15rem 0.3rem;
+            }
+        }
+        
+        /* Ensure table never overflows viewport */
+        @media (max-width: 992px) {
+            .kernel-table {
+                font-size: 0.75rem;
+            }
+            
+            .container-fluid {
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -63,87 +266,106 @@
             and verifies that source files are using the latest DKMS version.
         </div>
 
-        <!-- Filtering and Sorting Controls -->
+        <!-- Compact Filtering, Sorting, and Statistics Controls -->
         <div class="row mb-3">
-            <div class="col-md-6">
+            <!-- Single Unified Card for Controls and Stats -->
+            <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h6 class="mb-0">Filters</h6>
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h6 class="mb-0">Filters & Sorting</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <!-- Inline Statistics -->
+                                <div class="d-flex justify-content-end align-items-center">
+                                    <div class="me-3">
+                                        <strong>{{.Data.TotalKernels}}</strong> Total | 
+                                        <strong>{{.Data.SupportedLRM}}</strong> L-R-M | 
+                                        <strong id="displayedResultsCount">{{len .Data.KernelResults}}</strong> Displayed
+                                    </div>
+                                    <div class="text-muted small">
+                                        Updated: {{.Data.LastUpdated.Format "15:04:05"}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="row mb-2">
-                            <div class="col-md-3">
-                                <label for="lrmSupportedFilter" class="form-label"><strong>L-R-M Support</strong></label>
-                                <select id="lrmSupportedFilter" class="form-select form-select-sm">
+                    <div class="card-body py-2">
+                        <!-- Truly Horizontal Layout with Flexbox -->
+                        <div class="d-flex flex-wrap align-items-center gap-3">
+                            <!-- Primary Filters -->
+                            <div class="d-flex align-items-center">
+                                <label for="lrmSupportedFilter" class="form-label me-2 mb-0 small text-nowrap"><strong>L-R-M:</strong></label>
+                                <select id="lrmSupportedFilter" class="form-select form-select-sm" style="width: auto;">
                                     <option value="all">All</option>
                                     <option value="true" selected>True</option>
                                     <option value="false">False</option>
                                 </select>
                             </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="seriesFilter" class="form-label">Series</label>
-                                <select id="seriesFilter" class="form-select form-select-sm">
-                                    <option value="">All Series</option>
+                            
+                            <div class="d-flex align-items-center">
+                                <label for="seriesFilter" class="form-label me-2 mb-0 small text-nowrap">Series:</label>
+                                <select id="seriesFilter" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="">All</option>
                                 </select>
                             </div>
-                            <div class="col-md-6">
-                                <label for="routingFilter" class="form-label">Routing</label>
-                                <select id="routingFilter" class="form-select form-select-sm">
-                                    <option value="">All Routings</option>
+                            
+                            <div class="d-flex align-items-center">
+                                <label for="routingFilter" class="form-label me-2 mb-0 small text-nowrap">Routing:</label>
+                                <select id="routingFilter" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="">All</option>
                                     <option value="ubuntu/4" selected>ubuntu/4</option>
                                 </select>
                             </div>
-                        </div>
-                        <!-- Individual Filter Columns -->
-                        <div class="row">
-                            <div class="col-md-2">
-                                <label class="form-label">Support Status</label>
-                                <select id="supportedFilter" class="form-select form-select-sm">
+                            
+                            <!-- Separator -->
+                            <div class="vr"></div>
+                            
+                            <!-- Status Filters -->
+                            <div class="d-flex align-items-center">
+                                <label class="form-label me-2 mb-0 small text-nowrap">Supp:</label>
+                                <select id="supportedFilter" class="form-select form-select-sm" style="width: auto;">
                                     <option value="all">All</option>
-                                    <option value="true" selected>True</option>
-                                    <option value="false">False</option>
+                                    <option value="true" selected>✓</option>
+                                    <option value="false">✗</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
-                                <label class="form-label">LTS</label>
-                                <select id="ltsFilter" class="form-select form-select-sm">
+                            
+                            <div class="d-flex align-items-center">
+                                <label class="form-label me-2 mb-0 small text-nowrap">LTS:</label>
+                                <select id="ltsFilter" class="form-select form-select-sm" style="width: auto;">
                                     <option value="all" selected>All</option>
-                                    <option value="true">True</option>
-                                    <option value="false">False</option>
+                                    <option value="true">✓</option>
+                                    <option value="false">✗</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
-                                <label class="form-label">ESM</label>
-                                <select id="esmFilter" class="form-select form-select-sm">
+                            
+                            <div class="d-flex align-items-center">
+                                <label class="form-label me-2 mb-0 small text-nowrap">ESM:</label>
+                                <select id="esmFilter" class="form-select form-select-sm" style="width: auto;">
                                     <option value="all" selected>All</option>
-                                    <option value="true">True</option>
-                                    <option value="false">False</option>
+                                    <option value="true">✓</option>
+                                    <option value="false">✗</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
-                                <label class="form-label">Development</label>
-                                <select id="developmentFilter" class="form-select form-select-sm">
+                            
+                            <div class="d-flex align-items-center">
+                                <label class="form-label me-2 mb-0 small text-nowrap">Dev:</label>
+                                <select id="developmentFilter" class="form-select form-select-sm" style="width: auto;">
                                     <option value="all" selected>All</option>
-                                    <option value="true">True</option>
-                                    <option value="false">False</option>
+                                    <option value="true">✓</option>
+                                    <option value="false">✗</option>
                                 </select>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h6 class="mb-0">Sorting</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <label for="sortBy" class="form-label">Sort By</label>
-                                <select id="sortBy" class="form-select form-select-sm">
+                            
+                            <!-- Separator -->
+                            <div class="vr"></div>
+                            
+                            <!-- Sorting -->
+                            <div class="d-flex align-items-center">
+                                <label for="sortBy" class="form-label me-2 mb-0 small text-nowrap">Sort:</label>
+                                <select id="sortBy" class="form-select form-select-sm" style="width: auto;">
                                     <option value="series">Series</option>
                                     <option value="codename">Codename</option>
                                     <option value="source">Source</option>
@@ -153,49 +375,15 @@
                                     <option value="development">Development</option>
                                 </select>
                             </div>
-                            <div class="col-md-4">
-                                <label for="sortOrder" class="form-label">Order</label>
-                                <select id="sortOrder" class="form-select form-select-sm">
-                                    <option value="asc">Ascending</option>
-                                    <option value="desc">Descending</option>
+                            
+                            <div class="d-flex align-items-center">
+                                <label for="sortOrder" class="form-label me-2 mb-0 small text-nowrap">Order:</label>
+                                <select id="sortOrder" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="asc">↑</option>
+                                    <option value="desc">↓</option>
                                 </select>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h5 class="card-title">{{.Data.TotalKernels}}</h5>
-                        <p class="card-text">Total Kernels</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h5 class="card-title">{{.Data.SupportedLRM}}</h5>
-                        <p class="card-text">Supported with L-R-M</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h5 class="card-title" id="displayedResultsCount">{{len .Data.KernelResults}}</h5>
-                        <p class="card-text">Displayed Results</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h5 class="card-title text-muted">{{.Data.LastUpdated.Format "15:04:05"}}</h5>
-                        <p class="card-text">Last Updated</p>
                     </div>
                 </div>
             </div>
@@ -210,11 +398,11 @@
                         <th data-sort="codename">Codename <i class="sort-icon"></i></th>
                         <th data-sort="source">Source & Version <i class="sort-icon"></i></th>
                         <th data-sort="routing">Routing <i class="sort-icon"></i></th>
-                        <th data-sort="supported">Supported <i class="sort-icon"></i></th>
+                        <th data-sort="supported">Supp. <i class="sort-icon"></i></th>
                         <th data-sort="lts">LTS <i class="sort-icon"></i></th>
                         <th data-sort="esm">ESM <i class="sort-icon"></i></th>
-                        <th data-sort="development">Development <i class="sort-icon"></i></th>
-                        <th>L-R-M Package & Version</th>
+                        <th data-sort="development">Dev. <i class="sort-icon"></i></th>
+                        <th>L-R-M Package</th>
                         <th>NVIDIA Driver & Status</th>
                     </tr>
                 </thead>
