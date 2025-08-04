@@ -6,10 +6,28 @@ import (
 	"sort"
 	"time"
 
+	"nvidia_driver_monitor/internal/config"
 	"nvidia_driver_monitor/internal/utils"
 
 	"gopkg.in/yaml.v2"
 )
+
+// Global config for SRU package
+var sruConfig *config.Config
+
+// SetSRUConfig sets the configuration for SRU operations
+func SetSRUConfig(cfg *config.Config) {
+	sruConfig = cfg
+}
+
+// GetSRUCycleURL returns the configured SRU cycle URL
+func GetSRUCycleURL() string {
+	if sruConfig != nil {
+		effectiveURLs := sruConfig.GetEffectiveURLs()
+		return effectiveURLs.Kernel.SRUCycleURL
+	}
+	return "https://kernel.ubuntu.com/forgejo/kernel/kernel-versions/raw/branch/main/info/sru-cycle.yaml" // fallback
+}
 
 // SRUCycle represents a single SRU cycle entry
 type SRUCycle struct {
@@ -34,7 +52,7 @@ type SRUCycles struct {
 
 // FetchSRUCycles fetches and parses SRU cycles from the Ubuntu kernel repository
 func FetchSRUCycles() (*SRUCycles, error) {
-	url := "https://kernel.ubuntu.com/forgejo/kernel/kernel-versions/raw/branch/main/info/sru-cycle.yaml"
+	url := GetSRUCycleURL()
 
 	resp, err := utils.HTTPGetWithRetry(url)
 	if err != nil {

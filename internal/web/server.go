@@ -108,6 +108,9 @@ func NewWebService() (*WebService, error) {
 
 // NewWebServiceWithConfig creates a new web service instance with configuration
 func NewWebServiceWithConfig(cfg *config.Config, templatePath string) (*WebService, error) {
+	// Set global configuration for packages
+	packages.SetPackagesConfig(cfg)
+
 	// Initialize the service with empty cache
 	ws := &WebService{
 		cache: &CachedData{
@@ -152,13 +155,13 @@ func (ws *WebService) refreshData() error {
 	log.Printf("Refreshing data...")
 
 	// Get the latest UDA releases from nvidia.com
-	udaEntries, err := drivers.GetNvidiaDriverEntries()
+	udaEntries, err := drivers.GetNvidiaDriverEntries(ws.config)
 	if err != nil {
 		return fmt.Errorf("failed to get UDA entries: %v", err)
 	}
 
 	// Get server driver versions
-	_, allBranches, err := drivers.GetLatestServerDriverVersions()
+	_, allBranches, err := drivers.GetLatestServerDriverVersions(ws.config)
 	if err != nil {
 		return fmt.Errorf("failed to get server driver versions: %v", err)
 	}
@@ -258,7 +261,7 @@ func (ws *WebService) getCachedPackages() ([]*PackageData, time.Time, bool) {
 // generatePackageData generates the table data for a specific package
 func (ws *WebService) generatePackageData(packageName string) (*PackageData, error) {
 	// Get source package versions
-	sourceVersions, err := packages.GetMaxSourceVersionsArchive(packageName)
+	sourceVersions, err := packages.GetMaxSourceVersionsArchive(ws.config, packageName)
 	if err != nil {
 		return nil, err
 	}
@@ -466,9 +469,11 @@ func (ws *WebService) indexHandler(w http.ResponseWriter, r *http.Request) {
 	templateData := struct {
 		AllPackages []*PackageData
 		LastUpdated time.Time
+		CDN         map[string]string
 	}{
 		AllPackages: allPackages,
 		LastUpdated: lastUpdated,
+		CDN:         GetCDNResources(ws.config),
 	}
 
 	// Execute the template
@@ -514,7 +519,7 @@ func (ws *WebService) packageHandler(w http.ResponseWriter, r *http.Request) {
     <title>{{.PackageName}} - NVIDIA Driver Package Status</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{.CDN.BootstrapCSS}}" rel="stylesheet">
     <style>
         .container-fluid { max-width: 1200px; }
         .table-success { background-color: #d1e7dd !important; }
@@ -575,7 +580,7 @@ func (ws *WebService) packageHandler(w http.ResponseWriter, r *http.Request) {
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{.CDN.BootstrapJS}}"></script>
 </body>
 </html>`
 
@@ -586,7 +591,17 @@ func (ws *WebService) packageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html")
-	if err := tmpl.Execute(w, packageData); err != nil {
+
+	// Create template data with CDN resources
+	templateData := struct {
+		*PackageData
+		CDN map[string]string
+	}{
+		PackageData: packageData,
+		CDN:         GetCDNResources(ws.config),
+	}
+
+	if err := tmpl.Execute(w, templateData); err != nil {
 		http.Error(w, fmt.Sprintf("Error executing template: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -643,7 +658,7 @@ func (ws *WebService) Start(addr string) error {
 	}
 
 	// Create handlers
-	lrmHandler := NewLRMHandler(ws.templatePath)
+	lrmHandler := NewLRMHandler(ws.templatePath, ws.config)
 	apiHandler := NewAPIHandler()
 
 	// Setup routes with optional rate limiting
@@ -747,7 +762,7 @@ func (ws *WebService) lrmVerifierHandler(w http.ResponseWriter, r *http.Request)
     <title>Linux Restricted Modules (L-R-M) Verifier</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{.CDN.BootstrapCSS}}" rel="stylesheet">
     <style>
         .container-fluid { max-width: 1600px; }
         .table-success { background-color: #d1e7dd !important; }
@@ -896,7 +911,7 @@ func (ws *WebService) lrmVerifierHandler(w http.ResponseWriter, r *http.Request)
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{.CDN.BootstrapJS}}"></script>
 </body>
 </html>
 `
@@ -932,8 +947,10 @@ func (ws *WebService) lrmVerifierHandler(w http.ResponseWriter, r *http.Request)
 	// Prepare template data
 	templateData := struct {
 		Data *lrm.LRMVerifierData
+		CDN  map[string]string
 	}{
 		Data: lrmData,
+		CDN:  GetCDNResources(ws.config),
 	}
 
 	// Execute template
@@ -962,8 +979,13 @@ func (ws *WebService) statisticsPageHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Execute the template with no data (JavaScript will load data dynamically)
-	if err := tmpl.Execute(w, nil); err != nil {
+	// Execute the template with CDN resources
+	templateData := struct {
+		CDN map[string]string
+	}{
+		CDN: GetCDNResources(ws.config),
+	}
+	if err := tmpl.Execute(w, templateData); err != nil {
 		http.Error(w, fmt.Sprintf("Error executing statistics template: %v", err), http.StatusInternalServerError)
 		return
 	}

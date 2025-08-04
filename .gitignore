@@ -26,6 +26,9 @@ nvidia-monitor
 nvidia_driver_monitor
 nvidia-driver-status
 nvidia-web-server-*
+nvidia-config
+nvidia-mock-server
+config-tool
 test-*
 
 # IDE files

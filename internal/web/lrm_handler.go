@@ -6,19 +6,22 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"nvidia_driver_monitor/internal/config"
 	"nvidia_driver_monitor/internal/lrm"
 )
 
 // LRMHandler handles the L-R-M verifier page
 type LRMHandler struct {
 	templatePath      string
+	config            *config.Config
 	supportedReleases interface{} // TODO: Define proper type
 }
 
 // NewLRMHandler creates a new LRM handler
-func NewLRMHandler(templatePath string) *LRMHandler {
+func NewLRMHandler(templatePath string, cfg *config.Config) *LRMHandler {
 	return &LRMHandler{
 		templatePath: templatePath,
+		config:       cfg,
 	}
 }
 
@@ -56,8 +59,10 @@ func (h *LRMHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Prepare template data
 	templateData := struct {
 		Data *lrm.LRMVerifierData
+		CDN  map[string]string
 	}{
 		Data: lrmData,
+		CDN:  GetCDNResources(h.config),
 	}
 
 	// Execute template

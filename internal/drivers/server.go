@@ -7,6 +7,7 @@ import (
 	"sort"
 	"time"
 
+	"nvidia_driver_monitor/internal/config"
 	"nvidia_driver_monitor/internal/utils"
 )
 
@@ -29,8 +30,9 @@ type DriverInfo struct {
 }
 
 // GetLatestServerDriverVersions retrieves the latest server driver versions
-func GetLatestServerDriverVersions() (map[string]DriverInfo, AllBranches, error) {
-	resp, err := utils.HTTPGetWithRetry("https://docs.nvidia.com/datacenter/tesla/drivers/releases.json")
+func GetLatestServerDriverVersions(cfg *config.Config) (map[string]DriverInfo, AllBranches, error) {
+	url := cfg.URLs.NVIDIA.ServerDriversAPI
+	resp, err := utils.HTTPGetWithRetry(url)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch server driver data: %w", err)
 	}

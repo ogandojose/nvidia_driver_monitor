@@ -6,13 +6,27 @@ import (
 	"log"
 	"strings"
 
+	"nvidia_driver_monitor/internal/config"
 	"nvidia_driver_monitor/internal/drivers"
+	"nvidia_driver_monitor/internal/lrm"
 	"nvidia_driver_monitor/internal/packages"
 	"nvidia_driver_monitor/internal/releases"
 	"nvidia_driver_monitor/internal/sru"
 )
 
 func main() {
+	// Load configuration
+	cfg, err := config.LoadConfig("config/config.json")
+	if err != nil {
+		log.Printf("Warning: Could not load config file, using defaults: %v", err)
+		cfg = config.DefaultConfig()
+	}
+
+	// Set configuration for various packages
+	lrm.SetProcessorConfig(cfg)
+	sru.SetSRUConfig(cfg)
+	packages.SetPackagesConfig(cfg)
+
 	// Configuration
 	packageQuery := "nvidia-graphics-drivers-570"
 	supportedReleasesFile := "supportedReleases.json"
@@ -21,7 +35,7 @@ func main() {
 	log.SetOutput(io.Discard)
 
 	// Get source package versions
-	sourceVersions, err := packages.GetMaxSourceVersionsArchive(packageQuery)
+	sourceVersions, err := packages.GetMaxSourceVersionsArchive(cfg, packageQuery)
 	if err != nil {
 		fmt.Printf("Error fetching source versions: %v\n", err)
 		return
@@ -30,14 +44,14 @@ func main() {
 	packages.PrintSourceVersionMapTable(sourceVersions)
 
 	// Get the latest UDA releases from nvidia.com
-	udaEntries, err := drivers.GetNvidiaDriverEntries()
+	udaEntries, err := drivers.GetNvidiaDriverEntries(cfg)
 	if err != nil {
 		fmt.Printf("Error fetching UDA releases: %v\n", err)
 		return
 	}
 
 	// Get server driver versions
-	_, allBranches, err := drivers.GetLatestServerDriverVersions()
+	_, allBranches, err := drivers.GetLatestServerDriverVersions(cfg)
 	if err != nil {
 		fmt.Printf("Error fetching server driver data: %v\n", err)
 		return
@@ -84,7 +98,7 @@ func main() {
 	for _, release := range supportedReleases {
 		currentPackageName := "nvidia-graphics-drivers-" + release.BranchName
 
-		currentSourceVersions, err := packages.GetMaxSourceVersionsArchive(currentPackageName)
+		currentSourceVersions, err := packages.GetMaxSourceVersionsArchive(cfg, currentPackageName)
 		if err != nil {
 			fmt.Printf("Error fetching source versions for %s: %v\n", currentPackageName, err)
 			continue

@@ -9,6 +9,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"nvidia_driver_monitor/internal/config"
 	"nvidia_driver_monitor/internal/utils"
 
 	"golang.org/x/net/html"
@@ -48,8 +49,8 @@ func LogTableUDAReleases(entries []DriverEntry) {
 }
 
 // GetNvidiaDriverEntries retrieves driver entries from NVIDIA's website
-func GetNvidiaDriverEntries() ([]DriverEntry, error) {
-	url := "https://www.nvidia.com/en-us/drivers/unix/linux-amd64-display-archive/"
+func GetNvidiaDriverEntries(cfg *config.Config) ([]DriverEntry, error) {
+	url := cfg.URLs.NVIDIA.DriverArchiveURL
 
 	resp, err := utils.HTTPGetWithRetry(url)
 	if err != nil {

@@ -6,12 +6,21 @@ import (
 	"log"
 	"strings"
 
+	"nvidia_driver_monitor/internal/config"
 	"nvidia_driver_monitor/internal/releases"
 	"nvidia_driver_monitor/internal/sru"
 	"nvidia_driver_monitor/internal/utils"
 
 	version "github.com/knqyf263/go-deb-version"
 )
+
+// Global configuration for packages
+var packagesConfig *config.Config
+
+// SetPackagesConfig sets the global configuration for packages
+func SetPackagesConfig(cfg *config.Config) {
+	packagesConfig = cfg
+}
 
 // SourceAPIResponse represents the JSON response for source packages
 type SourceAPIResponse struct {
@@ -55,12 +64,12 @@ func SeriesFromDistroSeriesLink(s string) string {
 }
 
 // GetMaxSourceVersionsArchive retrieves the maximum source package versions from archive
-func GetMaxSourceVersionsArchive(packageName string) (*SourceVersionPerSeries, error) {
+func GetMaxSourceVersionsArchive(cfg *config.Config, packageName string) (*SourceVersionPerSeries, error) {
 	if packageName == "" {
 		return nil, fmt.Errorf("package name cannot be empty")
 	}
 
-	url := fmt.Sprintf("https://api.launchpad.net/devel/ubuntu/+archive/primary/?ws.op=getPublishedSources&source_name=%s&created_since_date=2025-01-10&order_by_date=true&exact_match=true", packageName)
+	url := cfg.URLs.Launchpad.GetPublishedSourcesURL(packageName)
 
 	fmt.Println("Query:", url)
 
@@ -139,7 +148,12 @@ func GetMaxSourceVersionsArchive(packageName string) (*SourceVersionPerSeries, e
 
 // getMaxSourceVersionsArchive is a wrapper function for backward compatibility
 func getMaxSourceVersionsArchive(packageName string) (*SourceVersionPerSeries, error) {
-	return GetMaxSourceVersionsArchive(packageName)
+	// Use global config if available, otherwise create a default one
+	cfg := packagesConfig
+	if cfg == nil {
+		cfg = config.DefaultConfig()
+	}
+	return GetMaxSourceVersionsArchive(cfg, packageName)
 }
 
 // PrintSourceVersionMapTable prints the source version map in table format

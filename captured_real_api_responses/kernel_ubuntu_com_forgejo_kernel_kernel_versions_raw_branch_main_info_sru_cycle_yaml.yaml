@@ -1,0 +1,578 @@
+# kernel SRU Cycle information file (YAML format)
+#
+# For all live SRU cycles this file contains a record.  That dictionary record
+# defines attributed of the SRU cycle such as its current release-data.
+#
+# File format:
+# The file en-toto is an unnamed dictionary containing a named series of Cycle
+# records (see below).  The name for a record is the official cycle name without
+# its respin number, for example 2018.05.21.
+#
+# Cycle record fields:
+#  * name (string)
+#       the name of this SRU Cycle
+#  * complete (bool)
+#       the cycle was completed and is archived
+#  * release-date (string)
+#       the release date of this SRU cycle; YYYY-MM-DD format
+#  * hold (bool)
+#       the cycle is on hold; infer kernel-block on all active packages
+#  * current (bool)
+#       indicates which sru cycle is the current cycle. the current field only
+#       needs to exist on the current cycle entry
+#  * cutoff-date (string)
+#       the date patches are no longer applied to the git repos for the given
+#       cycle
+#  * stream (integer)
+#       the stream which the cycle uses by default (1 if not present)
+#  * notes-link (string)
+#       a notes link; initially a jira card identifier KERN-1234
+#  * owner (string)
+#       the owner of the cycle
+
+'2025.07.14':
+    release-date: '2025-08-11'
+    notes-link: KSRU-17552
+    stream: 1
+    owner: smb
+
+'s2025.06.16':
+    start-date: '2025-07-14'
+    release-date: '2025-07-28'
+    notes-link: KSRU-17543
+    stream: 2
+    owner: diewald
+
+'2025.06.16':
+    release-date: '2025-07-14'
+    notes-link: KSRU-17129
+    stream: 1
+    owner: mehmetbasaran
+
+'s2025.05.19':
+    start-date: '2025-06-16'
+    release-date: '2025-06-30'
+    notes-link: KSRU-17120
+    stream: 2
+    owner: diewald
+
+'2025.05.19':
+    release-date: '2025-06-16'
+    notes-link: KSRU-16753
+    stream: 1
+    owner: smb
+
+'s2025.04.14':
+    start-date: '2025-05-19'
+    release-date: '2025-06-02'
+    notes-link: KSRU-16744
+    complete: true
+    owner: diewald
+
+'2025.04.14':
+    release-date: '2025-05-12'
+    notes-link: KSRU-16290
+    complete: true
+    owner: mehmetbasaran
+
+'s2025.03.17':
+    start-date: '2025-04-14'
+    release-date: '2025-04-28'
+    notes-link: KSRU-16319
+    complete: true
+    owner: diewald
+
+'2025.03.17':
+    release-date: '2025-04-14'
+    notes-link: KSRU-15912
+    complete: true
+    owner: smb
+
+'s2025.02.10':
+    start-date: '2025-03-17'
+    release-date: '2025-03-31'
+    notes-link: KSRU-15903
+    complete: true
+    owner: diewald
+
+'2025.02.10':
+    release-date: '2025-03-17'
+    notes-link: KSRU-15509
+    complete: true
+    owner: mehmetbasaran
+
+'s2025.01.13':
+    start-date: '2025-02-10'
+    release-date: '2025-03-03'
+    notes-link: KSRU-15500
+    complete: true
+    owner: diewald
+
+'2025.01.13':
+    release-date: '2025-02-10'
+    notes-link: KSRU-14972
+    complete: true
+    owner: smb
+
+'s2024.12.02':
+    start-date: '2025-01-13'
+    release-date: '2025-01-27'
+    notes-link: KSRU-14963
+    complete: true
+    owner: diewald
+
+'s2024.10.28':
+    start-date: '2024-11-25'
+    release-date: '2024-12-16'
+    notes-link: KSRU-14758
+    complete: true
+    owner: diewald
+
+'2024.10.28':
+    release-date: '2024-12-02'
+    notes-link: KSRU-14336
+    complete: true
+    owner: mehmetbasaran
+
+'s2024.09.30':
+    start-date: '2024-10-28'
+    release-date: '2024-11-18'
+    notes-link: KSRU-14327
+    complete: true
+    owner: diewald
+
+'2024.09.30':
+    release-date: '2024-10-28'
+    notes-link: KSRU-13937
+    complete: true
+    owner: smb
+
+'s2024.09.02':
+    start-date: '2024-09-30'
+    release-date: '2024-10-14'
+    notes-link: KSRU-13928
+    complete: true
+    owner: diewald
+
+'2024.09.02':
+    release-date: '2024-09-30'
+    notes-link: KSRU-13727
+    complete: true
+    owner: smb
+
+'s2024.08.05':
+    start-date: '2024-09-02'
+    release-date: '2024-09-16'
+    notes-link: KSRU-13718
+    complete: true
+    owner: diewald
+
+'2024.08.05':
+    release-date: '2024-09-02'
+    notes-link: KSRU-13273
+    complete: true
+    owner: roxanan
+
+'s2024.07.08':
+    start-date: '2024-08-05'
+    release-date: '2024-08-19'
+    notes-link: KSRU-13264
+    complete: true
+    owner: diewald
+
+'2024.07.08':
+    release-date: '2024-08-05'
+    notes-link: KSRU-12895
+    complete: true
+    owner: smb
+
+'s2024.06.10':
+    start-date: '2024-07-08'
+    release-date: '2024-07-22'
+    notes-link: KSRU-12886
+    complete: true
+    owner: diewald
+
+'2024.06.10':
+    release-date: '2024-07-08'
+    notes-link: KSRU-12477
+    complete: true
+    owner: smb
+
+'s2024.04.29':
+    start-date: '2024-06-10'
+    release-date: '2024-06-24'
+    notes-link: KSRU-12468
+    complete: true
+    owner: roxanan
+
+'2024.04.29':
+    release-date: '2024-06-03'
+    notes-link: KSRU-12080
+    complete: true
+    owner: roxanan
+
+'s2024.04.01':
+    start-date: '2024-04-29'
+    release-date: '2024-05-13'
+    notes-link: KSRU-12106
+    complete: true
+    owner: smb
+
+'2024.04.01':
+    release-date: '2024-04-29'
+    notes-link: KSRU-11628
+    complete: true
+
+'s2024.03.04':
+    start-date: '2024-04-01'
+    release-date: '2024-04-15'
+    notes-link: KSRU-11654
+    complete: true
+
+'2024.03.04':
+    release-date: '2024-04-01'
+    notes-link: KSRU-11314
+    complete: true
+
+'s2024.02.05':
+    start-date: '2024-03-04'
+    release-date: '2024-03-18'
+    notes-link: KSRU-11290
+    complete: true
+
+'2024.02.05':
+    release-date: '2024-03-04'
+    notes-link: KSRU-10954
+    complete: true
+
+'s2024.01.08':
+    start-date: '2024-02-05'
+    release-date: '2024-02-19'
+    notes-link: KSRU-10940
+    complete: true
+
+'2024.01.08':
+    release-date: '2024-02-05'
+    complete: true
+
+'s2023.10.30':
+    start-date: '2024-01-08'
+    release-date: '2024-01-22'
+    complete: true
+
+'2023.10.30':
+    release-date: '2023-12-04'
+    notes-link: KSRU-10521
+    complete: true
+
+'s2023.10.02':
+    start-date: '2023-10-30'
+    release-date: '2023-11-20'
+    complete: true
+
+'2023.10.02':
+    release-date: '2023-10-30'
+    complete: true
+
+'s2023.09.04':
+    start-date: '2023-10-02'
+    release-date: '2023-10-16'
+    complete: true
+
+'2023.09.04':
+    release-date: '2023-10-02'
+    complete: true
+
+'s2023.08.07':
+    start-date: '2023-09-04'
+    release-date: '2023-09-18'
+    complete: true
+
+'2023.08.07':
+    release-date: '2023-09-04'
+    complete: true
+
+'s2023.07.10':
+    start-date: '2023-08-07'
+    release-date: '2023-08-21'
+    complete: true
+
+'2023.07.10':
+    release-date: '2023-08-07'
+    complete: true
+
+'s2023.06.12':
+    start-date: '2023-07-10'
+    release-date: '2023-07-24'
+    complete: true
+
+'2023.06.12':
+    release-date: '2023-07-10'
+    complete: true
+
+'s2023.05.15':
+    start-date: '2023-06-12'
+    release-date: '2023-06-26'
+    complete: true
+
+'2023.05.15':
+    release-date: '2023-06-12'
+    complete: true
+
+'2023.04.17':
+    release-date: '2023-05-15'
+    complete: true
+
+'2023.03.20':
+    release-date: '2023-04-17'
+    complete: true
+
+'2023.02.27':
+    release-date: '2023-03-20'
+    complete: true
+
+'2023.01.30':
+    release-date: '2023-02-27'
+    complete: true
+
+'2023.01.02':
+    release-date: '2023-01-30'
+    complete: true
+
+'2022.11.14':
+    release-date: '2023-01-02'
+    complete: true
+
+'2022.10.10':
+    release-date: '2022-11-14'
+    stream: 2
+    complete: true
+
+'2022.09.19':
+    release-date: '2022-10-10'
+    complete: true
+
+'2022.08.29':
+    release-date: '2022-09-19'
+    complete: true
+
+'2022.08.08':
+    release-date: '2022-08-29'
+    complete: true
+
+'2022.07.11':
+    release-date: '2022-08-08'
+    complete: true
+
+'2022.06.20':
+    release-date: '2022-07-11'
+    complete: true
+
+'2022.05.30':
+    release-date: '2022-06-20'
+    complete: true
+
+'2022.05.09':
+    release-date: '2022-05-30'
+    complete: true
+
+'2022.04.18':
+    release-date: '2022-05-09'
+    complete: true
+
+'2022.03.21':
+    release-date: '2022-04-18'
+    complete: true
+
+'2022.02.21':
+    cutoff-date: '2022-02-17'
+    release-date: '2022-03-21'
+    complete: true
+
+'2022.01.31':
+    cutoff-date: '2022-01-27'
+    release-date: '2022-02-21'
+    complete: true
+
+'2022.01.03':
+    cutoff-date: '2021-12-30'
+    release-date: '2022-01-31'
+    complete: true
+
+'2021.11.29':
+    cutoff-date: '2021-11-24'
+    release-date: '2022-01-04'
+    complete: true
+
+'2021.11.08':
+    release-date: '2021-11-29'
+    complete: true
+
+'2021.10.18':
+    release-date: '2021-11-08'
+    complete: true
+
+'2021.09.27':
+    release-date: '2021-10-18'
+    complete: true
+
+'2021.09.06':
+    release-date: '2021-09-27'
+    complete: true
+
+'2021.08.16':
+    release-date: '2021-09-06'
+    complete: true
+
+'2021.07.19':
+    release-date: '2021-08-16'
+    complete: true
+
+'2021.06.21':
+    release-date: '2021-07-19'
+    complete: true
+
+'2021.05.31':
+    release-date: '2021-06-21'
+    complete: true
+
+'2021.05.10':
+    release-date: '2021-05-31'
+    complete: true
+
+'2021.04.12':
+    release-date: '2021-05-10'
+    complete: true
+
+'2021.03.15':
+    release-date: '2021-04-12'
+
+'2021.02.22':
+    release-date: '2021-03-15'
+
+'2021.01.25':
+    release-date: '2021-02-22'
+
+'2021.01.04':
+    release-date: '2021-01-25'
+
+'2020.11.30':
+    release-date: '2021-01-04'
+
+'2020.11.09':
+    release-date: '2020-11-30'
+
+'2020.09.21':
+    release-date: '2020-10-12'
+
+'2020.08.31':
+    release-date: '2020-09-21'
+
+'2020.08.10':
+    release-date: '2020-08-31'
+
+'2020.07.20':
+    release-date: '2020-08-10'
+
+'2020.06.29':
+    release-date: '2020-07-20'
+
+'2020.06.08':
+    release-date: '2020-06-29'
+
+'2020.05.18':
+    release-date: '2020-06-08'
+
+'2020.04.27':
+    release-date: '2020-05-18'
+
+'2020.04.06':
+    release-date: '2020-04-27'
+
+'2020.03.16':
+    release-date: '2020-04-06'
+
+'2020.02.17':
+    release-date: '2020-03-16'
+
+'2020.01.27':
+    release-date: '2020-02-17'
+
+'2020.01.06':
+    release-date: '2020-01-27'
+
+'2019.12.02':
+    release-date: '2020-01-06'
+
+'2019.11.11':
+    release-date: '2019-12-02'
+
+'2019.10.21':
+    release-date: '2019-11-11'
+
+'2019.09.30':
+    release-date: '2019-10-21'
+
+'2019.09.02':
+    release-date: '2019-09-30'
+
+'2019.08.12':
+    release-date: '2019-09-02'
+
+'2019.07.22':
+    release-date: '2019-08-12'
+
+'2019.07.01':
+    release-date: '2019-07-22'
+
+'2019.06.03':
+    release-date: '2019-07-01'
+
+'2019.05.13':
+    release-date: '2019-06-03'
+
+'2019.04.22':
+    release-date: '2019-05-13'
+
+'2019.04.01':
+    release-date: '2019-04-23'
+
+'2019.03.11':
+    release-date: '2019-04-01'
+
+'2019.02.04':
+    release-date: '2019-03-05'
+
+'2019.01.14':
+    release-date: '2019-02-04'
+
+'2018.12.03':
+    release-date: '2018-12-20'
+
+'2018.11.12':
+    release-date: '2018-12-03'
+
+'2018.10.22':
+    release-date: '2018-11-12'
+
+'2018.10.01':
+    release-date: '2018-10-22'
+
+'2018.09.10':
+    release-date: '2018-10-01'
+
+'2018.08.20':
+    release-date: '2018-09-10'
+
+'2018.07.30':
+    release-date: '2018-08-20'
+
+'2018.07.02':
+    release-date: '2018-07-19'
+
+'2018.06.11':
+    release-date: '2018-07-02'
+
+'2018.05.21':
+    release-date: '2018-06-11'

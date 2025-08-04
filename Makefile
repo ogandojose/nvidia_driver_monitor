@@ -4,15 +4,19 @@
 # Build configuration
 CONSOLE_BINARY = nvidia-driver-status
 WEB_BINARY = nvidia-web-server
+CONFIG_BINARY = nvidia-config
+MOCK_BINARY = nvidia-mock-server
 CONSOLE_SOURCE = main.go
 WEB_SOURCE = cmd/web/main.go
+CONFIG_SOURCE = cmd/config/main.go
+MOCK_SOURCE = cmd/mock-server/main.go
 
 # Go build flags
 GO_BUILD_FLAGS = -ldflags="-s -w"
 
 # Default target
 .PHONY: all
-all: console web
+all: console web config mock
 
 # Build console application
 .PHONY: console
@@ -27,6 +31,20 @@ web:
 	@echo "Building web server application..."
 	go build $(GO_BUILD_FLAGS) -o $(WEB_BINARY) $(WEB_SOURCE)
 	@echo "Web server application built: $(WEB_BINARY)"
+
+# Build configuration tool
+.PHONY: config
+config:
+	@echo "Building configuration tool..."
+	go build $(GO_BUILD_FLAGS) -o $(CONFIG_BINARY) $(CONFIG_SOURCE)
+	@echo "Configuration tool built: $(CONFIG_BINARY)"
+
+# Build mock server
+.PHONY: mock
+mock:
+	@echo "Building mock server..."
+	go build $(GO_BUILD_FLAGS) -o $(MOCK_BINARY) $(MOCK_SOURCE)
+	@echo "Mock server built: $(MOCK_BINARY)"
 
 # Install dependencies
 .PHONY: deps
@@ -60,6 +78,30 @@ run-lrm:
 	@echo "LRM Verifier will be available at: http://localhost:8080/l-r-m-verifier"
 	@echo "API endpoint available at: http://localhost:8080/api/lrm"
 	go run $(WEB_SOURCE)
+
+# Run mock server
+.PHONY: run-mock
+run-mock:
+	@echo "Running mock server..."
+	@echo "Mock server will be available at: http://localhost:9999"
+	go run $(MOCK_SOURCE)
+
+# Run mock server with config
+.PHONY: run-mock-config
+run-mock-config:
+	@echo "Running mock server with configuration..."
+	go run $(MOCK_SOURCE) -config config.json
+
+# Run web server with testing mode (requires mock server to be running)
+.PHONY: run-web-testing
+run-web-testing:
+	@echo "Running web server in testing mode..."
+	@echo "Make sure to start mock server first: make run-mock"
+	@echo "Web server will use local mock APIs instead of external services"
+	./$(CONFIG_BINARY) -generate -config config-testing.json > /dev/null
+	@echo '{ "testing": { "enabled": true } }' > config-testing-patch.json
+	@# Update config to enable testing mode (simplified approach)
+	go run $(WEB_SOURCE) -config config-testing.json
 
 # Generate self-signed certificate
 .PHONY: generate-cert
@@ -161,6 +203,26 @@ test:
 	@echo "Running tests..."
 	go test ./...
 
+# Run integration test for mock testing service
+.PHONY: test-integration
+test-integration:
+	@echo "Running integration test for mock testing service..."
+	./test-integration.sh
+
+# Testing targets
+.PHONY: test-coverage test-ultimate verify-coverage
+
+test-coverage: $(MOCK_BINARY)
+	@echo "🔍 Running comprehensive coverage verification..."
+	@./verify-comprehensive-coverage.sh
+
+test-ultimate: $(MOCK_BINARY)
+	@echo "🎯 Running ultimate coverage test (all 2,367 combinations)..."
+	@./ultimate-coverage-test.sh
+
+verify-coverage: test-coverage
+	@echo "✅ Coverage verification completed"
+
 # Validate templates
 .PHONY: validate-templates
 validate-templates:
@@ -219,10 +281,14 @@ help:
 	@echo "  run-web          - Run web server application"
 	@echo "  run-web-https    - Run web server application with HTTPS"
 	@echo "  run-lrm          - Run web server for LRM verifier testing"
+	@echo "  run-mock         - Run mock server"
+	@echo "  run-mock-config  - Run mock server with configuration"
+	@echo "  run-web-testing   - Run web server in testing mode"
 	@echo "  generate-cert    - Generate self-signed certificate"
 	@echo "  clean-cert       - Clean certificate files"
 	@echo "  kill-web         - Kill processes running on port 8080"
 	@echo "  test             - Run tests"
+	@echo "  test-integration  - Run integration test for mock testing service"
 	@echo "  validate-templates - Validate HTML template structure"
 	@echo "  check-templates  - Validate templates and test loading"
 	@echo "  fmt              - Format code"

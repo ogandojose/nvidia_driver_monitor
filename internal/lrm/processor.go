@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"nvidia_driver_monitor/internal/config"
 	"nvidia_driver_monitor/internal/packages"
 	"nvidia_driver_monitor/internal/utils"
 
@@ -27,12 +28,37 @@ var (
 	stopRefresh     chan bool
 	// Configuration
 	MaxConcurrency = 10 // Default concurrent workers for kernel querying
+	// Configuration instance
+	processorConfig *config.Config
 )
 
+// SetProcessorConfig sets the global configuration for the processor
+func SetProcessorConfig(cfg *config.Config) {
+	processorConfig = cfg
+}
+
+// GetKernelSeriesURL returns the configured kernel series URL
+func GetKernelSeriesURL() string {
+	if processorConfig != nil {
+		effectiveURLs := processorConfig.GetEffectiveURLs()
+		return effectiveURLs.Kernel.SeriesYAMLURL
+	}
+	return "https://kernel.ubuntu.com/forgejo/kernel/kernel-versions/raw/branch/main/info/kernel-series.yaml" // fallback
+}
+
+// GetLaunchpadAPIURL returns the configured Launchpad API URL template
+func GetLaunchpadAPIURL() string {
+	if processorConfig != nil {
+		// For the specific format used in the processor with date and package name
+		effectiveURLs := processorConfig.GetEffectiveURLs()
+		return fmt.Sprintf("%s/?created_since_date=%%s&exact_match=true&order_by_date=true&source_name=%%s&ws.op=getPublishedSources",
+			effectiveURLs.Launchpad.PublishedSourcesAPI)
+	}
+	return "https://api.launchpad.net/devel/ubuntu/+archive/primary/?created_since_date=%s&exact_match=true&order_by_date=true&source_name=%s&ws.op=getPublishedSources" // fallback
+}
+
 const (
-	KernelSeriesURL = "https://kernel.ubuntu.com/forgejo/kernel/kernel-versions/raw/branch/main/info/kernel-series.yaml"
-	LaunchpadAPIURL = "https://api.launchpad.net/devel/ubuntu/+archive/primary/?created_since_date=%s&exact_match=true&order_by_date=true&source_name=%s&ws.op=getPublishedSources"
-	DSCCacheDir     = "/tmp/lrm-dsc-cache"
+	DSCCacheDir = "/tmp/lrm-dsc-cache"
 )
 
 // DSCDownloadTask represents a task for downloading a DSC file
@@ -75,7 +101,7 @@ func FetchKernelLRMData(routing string) (*LRMVerifierData, error) {
 	log.Printf("Fetching kernel-series.yaml...")
 
 	// Download kernel-series.yaml
-	resp, err := utils.HTTPGetWithRetry(KernelSeriesURL)
+	resp, err := utils.HTTPGetWithRetry(GetKernelSeriesURL())
 	if err != nil {
 		return nil, fmt.Errorf("failed to download kernel-series.yaml: %v", err)
 	}
@@ -194,7 +220,7 @@ func FetchKernelLRMDataDebug(routing string) (*LRMVerifierData, error) {
 	log.Printf("Fetching kernel-series.yaml...")
 
 	// Download kernel-series.yaml
-	resp, err := utils.HTTPGetWithRetry(KernelSeriesURL)
+	resp, err := utils.HTTPGetWithRetry(GetKernelSeriesURL())
 	if err != nil {
 		return nil, fmt.Errorf("failed to download kernel-series.yaml: %v", err)
 	}
@@ -377,7 +403,11 @@ func fetchLatestVersions(kernels []KernelLRMResult) ([]KernelLRMResult, error) {
 			defer dkmsWg.Done()
 
 			// Use the same function as the main dashboard to get DKMS versions
-			sourceVersions, err := packages.GetMaxSourceVersionsArchive(packageName)
+			cfg := processorConfig
+			if cfg == nil {
+				cfg = config.DefaultConfig()
+			}
+			sourceVersions, err := packages.GetMaxSourceVersionsArchive(cfg, packageName)
 			if err != nil {
 				log.Printf("Warning: Failed to get source versions for %s: %v", packageName, err)
 				return
@@ -438,7 +468,7 @@ func fetchLatestVersions(kernels []KernelLRMResult) ([]KernelLRMResult, error) {
 
 // queryPackageVersion queries Launchpad API for the latest version of a package
 func queryPackageVersion(packageName, codename, dateThreshold string) string {
-	url := fmt.Sprintf(LaunchpadAPIURL, dateThreshold, packageName)
+	url := fmt.Sprintf(GetLaunchpadAPIURL(), dateThreshold, packageName)
 
 	log.Printf("Querying %s in %s...", packageName, codename)
 
@@ -738,7 +768,7 @@ func SimplifyNvidiaDriverName(fullDriverString string) string {
 func findDSCURL(packageName, codename, version string) (string, error) {
 	// Query Launchpad API for package information
 	createdSince := time.Now().AddDate(0, -6, 0).Format("2006-01-02")
-	url := fmt.Sprintf(LaunchpadAPIURL, createdSince, packageName)
+	url := fmt.Sprintf(GetLaunchpadAPIURL(), createdSince, packageName)
 
 	log.Printf("Querying Launchpad API for %s: %s", packageName, url)
 
@@ -1002,7 +1032,7 @@ func GetAvailableRoutings() ([]string, error) {
 	log.Printf("Fetching available routings from kernel-series.yaml...")
 
 	// Download kernel-series.yaml
-	resp, err := utils.HTTPGetWithRetry(KernelSeriesURL)
+	resp, err := utils.HTTPGetWithRetry(GetKernelSeriesURL())
 	if err != nil {
 		return nil, fmt.Errorf("failed to download kernel-series.yaml: %v", err)
 	}

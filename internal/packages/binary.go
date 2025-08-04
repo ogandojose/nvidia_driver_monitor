@@ -8,6 +8,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"nvidia_driver_monitor/internal/config"
 	"nvidia_driver_monitor/internal/utils"
 
 	version "github.com/knqyf263/go-deb-version"
@@ -62,12 +63,12 @@ func SeriesArchFromDistroArchSeriesLink(s string) (string, string) {
 }
 
 // GetMaxBinaryVersionsArchive retrieves the maximum binary package versions from archive
-func GetMaxBinaryVersionsArchive(packageName string) (*BinaryVersionPerSeries, error) {
+func GetMaxBinaryVersionsArchive(cfg *config.Config, packageName string) (*BinaryVersionPerSeries, error) {
 	if packageName == "" {
 		return nil, fmt.Errorf("package name cannot be empty")
 	}
 
-	url := fmt.Sprintf("https://api.launchpad.net/devel/ubuntu/+archive/primary?ws.op=getPublishedBinaries&binary_name=%s&exact_match=true", packageName)
+	url := cfg.URLs.Launchpad.GetPublishedBinariesURL(packageName)
 
 	resp, err := utils.HTTPGetWithRetry(url)
 	if err != nil {
