@@ -167,7 +167,7 @@ func (ws *WebService) refreshData() error {
 	}
 
 	// Read supported releases configuration
-	supportedReleases, err := releases.ReadSupportedReleases("supportedReleases.json")
+	supportedReleases, err := releases.ReadSupportedReleases("data/supportedReleases.json")
 	if err != nil {
 		return fmt.Errorf("failed to read supported releases: %v", err)
 	}

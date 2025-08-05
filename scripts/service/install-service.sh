@@ -88,8 +88,8 @@ if [ ! -f "./static/js/statistics.js" ]; then
 fi
 
 # Check if required configuration files exist
-if [ ! -f "./supportedReleases.json" ]; then
-    print_error "supportedReleases.json not found. This file is required for the service."
+if [ ! -f "./data/supportedReleases.json" ]; then
+    print_error "data/supportedReleases.json not found. This file is required for the service."
     exit 1
 fi
 
@@ -164,7 +164,7 @@ fi
 # Copy binary and configuration files
 print_status "Installing application files..."
 cp "./nvidia-web-server" "$INSTALL_DIR/"
-cp "./supportedReleases.json" "$INSTALL_DIR/"
+cp "./data/supportedReleases.json" "$INSTALL_DIR/"
 cp "./config.json" "$INSTALL_DIR/"
 chown "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR/nvidia-web-server"
 chown "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR/supportedReleases.json"

@@ -122,8 +122,8 @@
       "noble": true,
       "plucky": true
     },
-    "current_upstream_version": "",
-    "date_published": ""
+    "current_upstream_version": "580.65.06",
+    "date_published": "2025-08-04"
   },
   {
     "branch_name": "580-server",
@@ -136,7 +136,7 @@
       "noble": true,
       "plucky": true
     },
-    "current_upstream_version": "",
-    "date_published": ""
+    "current_upstream_version": "580.65.06",
+    "date_published": "2025-08-04"
   }
 ]

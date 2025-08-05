@@ -320,7 +320,7 @@ help:
 .PHONY: install-service
 install-service: web check-install-requirements
 	@echo "Installing systemd service..."
-	sudo ./install-service.sh
+	sudo ./scripts/service/install-service.sh
 
 # Check installation requirements
 .PHONY: check-install-requirements
@@ -362,8 +362,8 @@ check-install-requirements:
 		echo "❌ Required JS file static/js/statistics.js not found."; \
 		exit 1; \
 	fi
-	@if [ ! -f "supportedReleases.json" ]; then \
-		echo "❌ supportedReleases.json not found."; \
+	@if [ ! -f "data/supportedReleases.json" ]; then \
+		echo "❌ data/supportedReleases.json not found."; \
 		exit 1; \
 	fi
 	@if [ ! -f "config.json" ]; then \
@@ -379,13 +379,13 @@ dist: web check-install-requirements
 	@echo "Creating distribution package..."
 	@mkdir -p dist/nvidia-driver-monitor
 	@cp $(WEB_BINARY) dist/nvidia-driver-monitor/
-	@cp supportedReleases.json dist/nvidia-driver-monitor/
+	@cp data/supportedReleases.json dist/nvidia-driver-monitor/
 	@cp config.json dist/nvidia-driver-monitor/
 	@cp -r templates dist/nvidia-driver-monitor/
 	@cp -r static dist/nvidia-driver-monitor/
 	@cp *.service dist/nvidia-driver-monitor/
-	@cp install-service.sh dist/nvidia-driver-monitor/
-	@cp uninstall-service.sh dist/nvidia-driver-monitor/
+	@cp scripts/service/install-service.sh dist/nvidia-driver-monitor/
+	@cp scripts/service/uninstall-service.sh dist/nvidia-driver-monitor/
 	@cp README.md dist/nvidia-driver-monitor/
 	@echo "✅ Distribution package created in dist/nvidia-driver-monitor/"
 	@echo "Package contents:"
@@ -394,7 +394,7 @@ dist: web check-install-requirements
 .PHONY: uninstall-service
 uninstall-service:
 	@echo "Uninstalling systemd service..."
-	sudo ./uninstall-service.sh
+	sudo ./scripts/service/uninstall-service.sh
 
 .PHONY: service-start
 service-start:

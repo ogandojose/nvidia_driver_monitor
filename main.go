@@ -29,7 +29,7 @@ func main() {
 
 	// Configuration
 	packageQuery := "nvidia-graphics-drivers-570"
-	supportedReleasesFile := "supportedReleases.json"
+	supportedReleasesFile := "data/supportedReleases.json"
 
 	// Disable logging for cleaner output
 	log.SetOutput(io.Discard)
