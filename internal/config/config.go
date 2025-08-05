@@ -9,12 +9,13 @@ import (
 
 // Config holds all configuration for the application
 type Config struct {
-	Server    ServerConfig    `json:"server"`
-	Cache     CacheConfig     `json:"cache"`
-	RateLimit RateLimitConfig `json:"rate_limit"`
-	URLs      URLConfig       `json:"urls"`
-	HTTP      HTTPConfig      `json:"http"`
-	Testing   TestingConfig   `json:"testing"`
+	Server       ServerConfig       `json:"server"`
+	Cache        CacheConfig        `json:"cache"`
+	RateLimit    RateLimitConfig    `json:"rate_limit"`
+	RequestLimit RequestLimitConfig `json:"request_limit"`
+	URLs         URLConfig          `json:"urls"`
+	HTTP         HTTPConfig         `json:"http"`
+	Testing      TestingConfig      `json:"testing"`
 }
 
 // ServerConfig holds server-related configuration
@@ -48,6 +49,110 @@ func (c *CacheConfig) GetRefreshInterval() time.Duration {
 type RateLimitConfig struct {
 	RequestsPerMinute int  `json:"requests_per_minute"`
 	Enabled           bool `json:"enabled"`
+}
+
+// RequestLimitConfig holds request limiting configuration
+type RequestLimitConfig struct {
+	MaxBodySize    int64  `json:"max_body_size"`    // Maximum request body size in bytes
+	ReadTimeout    string `json:"read_timeout"`     // Server read timeout duration
+	WriteTimeout   string `json:"write_timeout"`    // Server write timeout duration  
+	IdleTimeout    string `json:"idle_timeout"`     // Server idle timeout duration
+	RequestTimeout string `json:"request_timeout"`  // Per-request timeout duration
+	MaxHeaderBytes int    `json:"max_header_bytes"` // Maximum request header size in bytes
+}
+
+// GetReadTimeout parses and returns the read timeout as time.Duration
+func (r *RequestLimitConfig) GetReadTimeout() time.Duration {
+	if r.ReadTimeout == "" {
+		return 15 * time.Second // default
+	}
+	
+	duration, err := time.ParseDuration(r.ReadTimeout)
+	if err != nil {
+		return 15 * time.Second // fallback to default
+	}
+	
+	return duration
+}
+
+// GetWriteTimeout parses and returns the write timeout as time.Duration
+func (r *RequestLimitConfig) GetWriteTimeout() time.Duration {
+	if r.WriteTimeout == "" {
+		return 15 * time.Second // default
+	}
+	
+	duration, err := time.ParseDuration(r.WriteTimeout)
+	if err != nil {
+		return 15 * time.Second // fallback to default
+	}
+	
+	return duration
+}
+
+// GetIdleTimeout parses and returns the idle timeout as time.Duration
+func (r *RequestLimitConfig) GetIdleTimeout() time.Duration {
+	if r.IdleTimeout == "" {
+		return 60 * time.Second // default
+	}
+	
+	duration, err := time.ParseDuration(r.IdleTimeout)
+	if err != nil {
+		return 60 * time.Second // fallback to default
+	}
+	
+	return duration
+}
+
+// GetRequestTimeout parses and returns the request timeout as time.Duration
+func (r *RequestLimitConfig) GetRequestTimeout() time.Duration {
+	if r.RequestTimeout == "" {
+		return 30 * time.Second // default
+	}
+	
+	duration, err := time.ParseDuration(r.RequestTimeout)
+	if err != nil {
+		return 30 * time.Second // fallback to default
+	}
+	
+	return duration
+}
+
+// ValidateRequestLimits validates the request limits configuration
+func (r *RequestLimitConfig) ValidateRequestLimits() error {
+	if r.MaxBodySize < 0 {
+		return fmt.Errorf("max_body_size cannot be negative")
+	}
+	
+	if r.MaxHeaderBytes < 0 {
+		return fmt.Errorf("max_header_bytes cannot be negative")
+	}
+	
+	// Validate timeout formats by parsing them
+	if r.ReadTimeout != "" {
+		if _, err := time.ParseDuration(r.ReadTimeout); err != nil {
+			return fmt.Errorf("invalid read_timeout format: %v", err)
+		}
+	}
+	
+	if r.WriteTimeout != "" {
+		if _, err := time.ParseDuration(r.WriteTimeout); err != nil {
+			return fmt.Errorf("invalid write_timeout format: %v", err)
+		}
+	}
+	
+	if r.IdleTimeout != "" {
+		if _, err := time.ParseDuration(r.IdleTimeout); err != nil {
+			return fmt.Errorf("invalid idle_timeout format: %v", err)
+		}
+	}
+	
+	if r.RequestTimeout != "" {
+		if _, err := time.ParseDuration(r.RequestTimeout); err != nil {
+			return fmt.Errorf("invalid request_timeout format: %v", err)
+		}
+	}
+	
+	return nil
 }
 
 // URLConfig holds all external URLs and API endpoints
@@ -193,6 +298,14 @@ func DefaultConfig() *Config {
 		RateLimit: RateLimitConfig{
 			RequestsPerMinute: 60,
 			Enabled:           true,
+		},
+		RequestLimit: RequestLimitConfig{
+			MaxBodySize:    1048576, // 1MB
+			ReadTimeout:    "15s",
+			WriteTimeout:   "15s",
+			IdleTimeout:    "60s",
+			RequestTimeout: "30s",
+			MaxHeaderBytes: 1048576, // 1MB
 		},
 		URLs: URLConfig{
 			Ubuntu: UbuntuURLs{

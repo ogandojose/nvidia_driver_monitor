@@ -718,39 +718,61 @@ func (ws *WebService) Start(addr string) error {
 	lrmHandler := NewLRMHandler(ws.templatePath, ws.config)
 	apiHandler := NewAPIHandler()
 
-	// Setup routes with security headers and optional rate limiting
-	if rateLimiter != nil {
-		http.Handle("/", SecurityHeadersMiddleware(rateLimiter.Middleware(http.HandlerFunc(ws.indexHandler))))
-		http.Handle("/package", SecurityHeadersMiddleware(rateLimiter.Middleware(http.HandlerFunc(ws.packageHandler))))
-		http.Handle("/api", SecurityHeadersMiddleware(rateLimiter.Middleware(http.HandlerFunc(ws.apiHandler))))
-		http.Handle("/l-r-m-verifier", SecurityHeadersMiddleware(rateLimiter.Middleware(lrmHandler)))
-		http.Handle("/statistics", SecurityHeadersMiddleware(rateLimiter.Middleware(http.HandlerFunc(ws.statisticsPageHandler))))
-
-		// Static files for statistics dashboard
-		http.Handle("/static/", SecurityHeadersMiddleware(rateLimiter.Middleware(http.StripPrefix("/static", http.FileServer(http.Dir("static"))))))
-
-		// New API endpoints
-		http.Handle("/api/lrm", SecurityHeadersMiddleware(rateLimiter.Middleware(http.HandlerFunc(apiHandler.LRMDataHandler))))
-		http.Handle("/api/health", SecurityHeadersMiddleware(rateLimiter.Middleware(http.HandlerFunc(apiHandler.HealthHandler))))
-		http.Handle("/api/routings", SecurityHeadersMiddleware(rateLimiter.Middleware(http.HandlerFunc(apiHandler.RoutingsHandler))))
-		http.Handle("/api/cache-status", SecurityHeadersMiddleware(rateLimiter.Middleware(http.HandlerFunc(apiHandler.CacheStatusHandler))))
-		http.Handle("/api/statistics", SecurityHeadersMiddleware(rateLimiter.Middleware(http.HandlerFunc(apiHandler.StatisticsHandler))))
+	// Create request limits middleware if configured
+	var requestLimitsMiddleware func(http.Handler) http.Handler
+	if ws.config != nil {
+		maxBodySize := ws.config.RequestLimit.MaxBodySize
+		requestTimeout := ws.config.RequestLimit.GetRequestTimeout()
+		requestLimitsMiddleware = RequestLimitsMiddleware(maxBodySize, requestTimeout)
+		log.Printf("Request limits enabled: max_body_size=%d bytes, request_timeout=%v", maxBodySize, requestTimeout)
 	} else {
-		http.Handle("/", SecurityHeadersMiddleware(http.HandlerFunc(ws.indexHandler)))
-		http.Handle("/package", SecurityHeadersMiddleware(http.HandlerFunc(ws.packageHandler)))
-		http.Handle("/api", SecurityHeadersMiddleware(http.HandlerFunc(ws.apiHandler)))
-		http.Handle("/l-r-m-verifier", SecurityHeadersMiddleware(lrmHandler))
-		http.Handle("/statistics", SecurityHeadersMiddleware(http.HandlerFunc(ws.statisticsPageHandler)))
+		// Use default limits if no config
+		requestLimitsMiddleware = RequestLimitsMiddleware(1048576, 30*time.Second) // 1MB, 30s
+	}
 
-		// Static files for statistics dashboard
-		http.Handle("/static/", SecurityHeadersMiddleware(http.StripPrefix("/static", http.FileServer(http.Dir("static")))))
+	// Setup middleware chain: Request Limits -> Security Headers -> Rate Limiting -> Handlers
+	chainMiddleware := func(h http.Handler) http.Handler {
+		if rateLimiter != nil {
+			return requestLimitsMiddleware(SecurityHeadersMiddleware(rateLimiter.Middleware(h)))
+		}
+		return requestLimitsMiddleware(SecurityHeadersMiddleware(h))
+	}
 
-		// New API endpoints
-		http.Handle("/api/lrm", SecurityHeadersMiddleware(http.HandlerFunc(apiHandler.LRMDataHandler)))
-		http.Handle("/api/health", SecurityHeadersMiddleware(http.HandlerFunc(apiHandler.HealthHandler)))
-		http.Handle("/api/routings", SecurityHeadersMiddleware(http.HandlerFunc(apiHandler.RoutingsHandler)))
-		http.Handle("/api/cache-status", SecurityHeadersMiddleware(http.HandlerFunc(apiHandler.CacheStatusHandler)))
-		http.Handle("/api/statistics", SecurityHeadersMiddleware(http.HandlerFunc(apiHandler.StatisticsHandler)))
+	// Setup routes with middleware chain
+	http.Handle("/", chainMiddleware(http.HandlerFunc(ws.indexHandler)))
+	http.Handle("/package", chainMiddleware(http.HandlerFunc(ws.packageHandler)))
+	http.Handle("/api", chainMiddleware(http.HandlerFunc(ws.apiHandler)))
+	http.Handle("/l-r-m-verifier", chainMiddleware(lrmHandler))
+	http.Handle("/statistics", chainMiddleware(http.HandlerFunc(ws.statisticsPageHandler)))
+
+	// Static files for statistics dashboard
+	http.Handle("/static/", chainMiddleware(http.StripPrefix("/static", http.FileServer(http.Dir("static")))))
+
+	// New API endpoints
+	http.Handle("/api/lrm", chainMiddleware(http.HandlerFunc(apiHandler.LRMDataHandler)))
+	http.Handle("/api/health", chainMiddleware(http.HandlerFunc(apiHandler.HealthHandler)))
+	http.Handle("/api/routings", chainMiddleware(http.HandlerFunc(apiHandler.RoutingsHandler)))
+	http.Handle("/api/cache-status", chainMiddleware(http.HandlerFunc(apiHandler.CacheStatusHandler)))
+	http.Handle("/api/statistics", chainMiddleware(http.HandlerFunc(apiHandler.StatisticsHandler)))
+
+	// Configure server timeouts
+	var readTimeout, writeTimeout, idleTimeout time.Duration
+	var maxHeaderBytes int
+	
+	if ws.config != nil {
+		readTimeout = ws.config.RequestLimit.GetReadTimeout()
+		writeTimeout = ws.config.RequestLimit.GetWriteTimeout()
+		idleTimeout = ws.config.RequestLimit.GetIdleTimeout()
+		maxHeaderBytes = ws.config.RequestLimit.MaxHeaderBytes
+		if maxHeaderBytes <= 0 {
+			maxHeaderBytes = 1048576 // 1MB default
+		}
+	} else {
+		// Default timeouts
+		readTimeout = 15 * time.Second
+		writeTimeout = 15 * time.Second
+		idleTimeout = 60 * time.Second
+		maxHeaderBytes = 1048576 // 1MB
 	}
 
 	if ws.EnableHTTPS {
@@ -777,17 +799,31 @@ func (ws *WebService) Start(addr string) error {
 		}
 
 		server := &http.Server{
-			Addr:      addr,
-			TLSConfig: tlsConfig,
+			Addr:           addr,
+			TLSConfig:      tlsConfig,
+			ReadTimeout:    readTimeout,
+			WriteTimeout:   writeTimeout,
+			IdleTimeout:    idleTimeout,
+			MaxHeaderBytes: maxHeaderBytes,
 		}
 
-		log.Printf("Starting HTTPS server on %s", addr)
+		log.Printf("Starting HTTPS server on %s with timeouts: read=%v, write=%v, idle=%v", 
+			addr, readTimeout, writeTimeout, idleTimeout)
 		log.Printf("Access the service at: https://localhost%s", addr)
 		return server.ListenAndServeTLS("", "")
 	} else {
-		log.Printf("Starting HTTP server on %s", addr)
+		server := &http.Server{
+			Addr:           addr,
+			ReadTimeout:    readTimeout,
+			WriteTimeout:   writeTimeout,
+			IdleTimeout:    idleTimeout,
+			MaxHeaderBytes: maxHeaderBytes,
+		}
+
+		log.Printf("Starting HTTP server on %s with timeouts: read=%v, write=%v, idle=%v", 
+			addr, readTimeout, writeTimeout, idleTimeout)
 		log.Printf("Access the service at: http://localhost%s", addr)
-		return http.ListenAndServe(addr, nil)
+		return server.ListenAndServe()
 	}
 }
 

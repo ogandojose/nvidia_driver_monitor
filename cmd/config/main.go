@@ -101,9 +101,18 @@ func validateConfig(configFile string) {
 		log.Fatalf("❌ HTTP timeout cannot be empty")
 	}
 
+	// Validate request limits
+	if err := cfg.RequestLimit.ValidateRequestLimits(); err != nil {
+		log.Fatalf("❌ Request limits validation failed: %v", err)
+	}
+
 	// Validate duration parsing
 	cfg.Cache.GetRefreshInterval() // Just call it to test
 	cfg.HTTP.GetTimeout()          // Just call it to test
+	cfg.RequestLimit.GetReadTimeout()    // Test request limit timeouts
+	cfg.RequestLimit.GetWriteTimeout()
+	cfg.RequestLimit.GetIdleTimeout()
+	cfg.RequestLimit.GetRequestTimeout()
 
 	fmt.Printf("✅ Configuration file %s is valid\n", configFile)
 }
@@ -129,6 +138,14 @@ func showConfig(configFile string) {
 	fmt.Printf("\n🚦 Rate Limiting:\n")
 	fmt.Printf("  Enabled: %t\n", cfg.RateLimit.Enabled)
 	fmt.Printf("  Requests per minute: %d\n", cfg.RateLimit.RequestsPerMinute)
+
+	fmt.Printf("\n⏱️ Request Limits:\n")
+	fmt.Printf("  Max Body Size: %d bytes (%.1f MB)\n", cfg.RequestLimit.MaxBodySize, float64(cfg.RequestLimit.MaxBodySize)/1048576)
+	fmt.Printf("  Read Timeout: %s (%v)\n", cfg.RequestLimit.ReadTimeout, cfg.RequestLimit.GetReadTimeout())
+	fmt.Printf("  Write Timeout: %s (%v)\n", cfg.RequestLimit.WriteTimeout, cfg.RequestLimit.GetWriteTimeout())
+	fmt.Printf("  Idle Timeout: %s (%v)\n", cfg.RequestLimit.IdleTimeout, cfg.RequestLimit.GetIdleTimeout())
+	fmt.Printf("  Request Timeout: %s (%v)\n", cfg.RequestLimit.RequestTimeout, cfg.RequestLimit.GetRequestTimeout())
+	fmt.Printf("  Max Header Bytes: %d bytes (%.1f KB)\n", cfg.RequestLimit.MaxHeaderBytes, float64(cfg.RequestLimit.MaxHeaderBytes)/1024)
 
 	fmt.Printf("\n🌐 HTTP Configuration:\n")
 	fmt.Printf("  Timeout: %s (%v)\n", cfg.HTTP.Timeout, cfg.HTTP.GetTimeout())
