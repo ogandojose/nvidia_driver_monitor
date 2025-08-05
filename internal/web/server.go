@@ -718,39 +718,39 @@ func (ws *WebService) Start(addr string) error {
 	lrmHandler := NewLRMHandler(ws.templatePath, ws.config)
 	apiHandler := NewAPIHandler()
 
-	// Setup routes with optional rate limiting
+	// Setup routes with security headers and optional rate limiting
 	if rateLimiter != nil {
-		http.Handle("/", rateLimiter.Middleware(http.HandlerFunc(ws.indexHandler)))
-		http.Handle("/package", rateLimiter.Middleware(http.HandlerFunc(ws.packageHandler)))
-		http.Handle("/api", rateLimiter.Middleware(http.HandlerFunc(ws.apiHandler)))
-		http.Handle("/l-r-m-verifier", rateLimiter.Middleware(lrmHandler))
-		http.Handle("/statistics", rateLimiter.Middleware(http.HandlerFunc(ws.statisticsPageHandler)))
+		http.Handle("/", SecurityHeadersMiddleware(rateLimiter.Middleware(http.HandlerFunc(ws.indexHandler))))
+		http.Handle("/package", SecurityHeadersMiddleware(rateLimiter.Middleware(http.HandlerFunc(ws.packageHandler))))
+		http.Handle("/api", SecurityHeadersMiddleware(rateLimiter.Middleware(http.HandlerFunc(ws.apiHandler))))
+		http.Handle("/l-r-m-verifier", SecurityHeadersMiddleware(rateLimiter.Middleware(lrmHandler)))
+		http.Handle("/statistics", SecurityHeadersMiddleware(rateLimiter.Middleware(http.HandlerFunc(ws.statisticsPageHandler))))
 
 		// Static files for statistics dashboard
-		http.Handle("/static/", rateLimiter.Middleware(http.StripPrefix("/static", http.FileServer(http.Dir("static")))))
+		http.Handle("/static/", SecurityHeadersMiddleware(rateLimiter.Middleware(http.StripPrefix("/static", http.FileServer(http.Dir("static"))))))
 
 		// New API endpoints
-		http.Handle("/api/lrm", rateLimiter.Middleware(http.HandlerFunc(apiHandler.LRMDataHandler)))
-		http.Handle("/api/health", rateLimiter.Middleware(http.HandlerFunc(apiHandler.HealthHandler)))
-		http.Handle("/api/routings", rateLimiter.Middleware(http.HandlerFunc(apiHandler.RoutingsHandler)))
-		http.Handle("/api/cache-status", rateLimiter.Middleware(http.HandlerFunc(apiHandler.CacheStatusHandler)))
-		http.Handle("/api/statistics", rateLimiter.Middleware(http.HandlerFunc(apiHandler.StatisticsHandler)))
+		http.Handle("/api/lrm", SecurityHeadersMiddleware(rateLimiter.Middleware(http.HandlerFunc(apiHandler.LRMDataHandler))))
+		http.Handle("/api/health", SecurityHeadersMiddleware(rateLimiter.Middleware(http.HandlerFunc(apiHandler.HealthHandler))))
+		http.Handle("/api/routings", SecurityHeadersMiddleware(rateLimiter.Middleware(http.HandlerFunc(apiHandler.RoutingsHandler))))
+		http.Handle("/api/cache-status", SecurityHeadersMiddleware(rateLimiter.Middleware(http.HandlerFunc(apiHandler.CacheStatusHandler))))
+		http.Handle("/api/statistics", SecurityHeadersMiddleware(rateLimiter.Middleware(http.HandlerFunc(apiHandler.StatisticsHandler))))
 	} else {
-		http.HandleFunc("/", ws.indexHandler)
-		http.HandleFunc("/package", ws.packageHandler)
-		http.HandleFunc("/api", ws.apiHandler)
-		http.Handle("/l-r-m-verifier", lrmHandler)
-		http.HandleFunc("/statistics", ws.statisticsPageHandler)
+		http.Handle("/", SecurityHeadersMiddleware(http.HandlerFunc(ws.indexHandler)))
+		http.Handle("/package", SecurityHeadersMiddleware(http.HandlerFunc(ws.packageHandler)))
+		http.Handle("/api", SecurityHeadersMiddleware(http.HandlerFunc(ws.apiHandler)))
+		http.Handle("/l-r-m-verifier", SecurityHeadersMiddleware(lrmHandler))
+		http.Handle("/statistics", SecurityHeadersMiddleware(http.HandlerFunc(ws.statisticsPageHandler)))
 
 		// Static files for statistics dashboard
-		http.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir("static"))))
+		http.Handle("/static/", SecurityHeadersMiddleware(http.StripPrefix("/static", http.FileServer(http.Dir("static")))))
 
 		// New API endpoints
-		http.HandleFunc("/api/lrm", apiHandler.LRMDataHandler)
-		http.HandleFunc("/api/health", apiHandler.HealthHandler)
-		http.HandleFunc("/api/routings", apiHandler.RoutingsHandler)
-		http.HandleFunc("/api/cache-status", apiHandler.CacheStatusHandler)
-		http.HandleFunc("/api/statistics", apiHandler.StatisticsHandler)
+		http.Handle("/api/lrm", SecurityHeadersMiddleware(http.HandlerFunc(apiHandler.LRMDataHandler)))
+		http.Handle("/api/health", SecurityHeadersMiddleware(http.HandlerFunc(apiHandler.HealthHandler)))
+		http.Handle("/api/routings", SecurityHeadersMiddleware(http.HandlerFunc(apiHandler.RoutingsHandler)))
+		http.Handle("/api/cache-status", SecurityHeadersMiddleware(http.HandlerFunc(apiHandler.CacheStatusHandler)))
+		http.Handle("/api/statistics", SecurityHeadersMiddleware(http.HandlerFunc(apiHandler.StatisticsHandler)))
 	}
 
 	if ws.EnableHTTPS {
