@@ -321,4 +321,28 @@ Then open your browser to `http://localhost:8080`
 
 See [WEB_SERVICE.md](WEB_SERVICE.md) for detailed documentation.
 
+## 📖 Documentation
+
+This project includes comprehensive documentation organized in the `docs/` directory:
+
+### 🎯 Getting Started
+- **[docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md)** - Current project status and feature overview
+- **[docs/WEB_SERVICE.md](docs/WEB_SERVICE.md)** - Web interface and API documentation
+- **[docs/CONFIGURATION.md](docs/CONFIGURATION.md)** - Configuration system guide
+
+### 🔧 Advanced Features  
+- **[docs/API.md](docs/API.md)** - Complete JSON API reference
+- **[docs/LRM_INTEGRATION.md](docs/LRM_INTEGRATION.md)** - Linux Restricted Modules verifier
+- **[docs/UPSTREAM_ONLY_DRIVERS_COMPLETE.md](docs/UPSTREAM_ONLY_DRIVERS_COMPLETE.md)** - Upstream-only drivers feature
+
+### 🚀 Deployment
+- **[docs/SERVICE.md](docs/SERVICE.md)** - SystemD service setup
+- **[docs/HTTPS.md](docs/HTTPS.md)** - HTTPS configuration
+
+### 📊 Implementation & History
+- **[docs/IMPLEMENTATION_COMPLETE.md](docs/IMPLEMENTATION_COMPLETE.md)** - Core implementation details
+- **[docs/CLEANUP_HISTORY.md](docs/CLEANUP_HISTORY.md)** - Project organization history
+
+For a complete documentation index, see **[docs/README.md](docs/README.md)**.
+
 ## Usage

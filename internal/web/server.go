@@ -300,73 +300,127 @@ func (ws *WebService) generatePackageData(packageName string) (*PackageData, err
 	orderedSeries := []string{"questing", "plucky", "noble", "jammy", "focal", "bionic"}
 	var seriesData []SeriesData
 
-	for _, series := range orderedSeries {
-		pocket, exists := sourceVersions.VersionMap[series]
-		if !exists {
-			continue // Skip series that don't exist in the version map
-		}
+	// Check if we have any source versions at all
+	hasSourceVersions := len(sourceVersions.VersionMap) > 0
 
-		updates := "-"
-		proposed := "-"
-		updatesColor := ""
-		proposedColor := ""
-		upstreamVersion := "-"
-		releaseDate := "-"
+	if hasSourceVersions {
+		// Normal case: package exists in Launchpad archive
+		for _, series := range orderedSeries {
+			pocket, exists := sourceVersions.VersionMap[series]
+			if !exists {
+				continue // Skip series that don't exist in the version map
+			}
+
+			updates := "-"
+			proposed := "-"
+			updatesColor := ""
+			proposedColor := ""
+			upstreamVersion := "-"
+			releaseDate := "-"
+			sruCycleDate := "-"
+
+			if found && supported.CurrentUpstreamVersion != "" {
+				upstreamVersion = supported.CurrentUpstreamVersion
+				if supported.DatePublished != "" {
+					releaseDate = supported.DatePublished
+				}
+			}
+
+			if pocket != nil && pocket.UpdatesSecurity.String() != "" {
+				updates = pocket.UpdatesSecurity.String()
+				if found && supported.CurrentUpstreamVersion != "" {
+					// Check if the upstream version is contained in the package version
+					if strings.Contains(updates, supported.CurrentUpstreamVersion) {
+						updatesColor = "success"
+					} else {
+						updatesColor = "danger"
+						// If version is red (upstream is greater), find SRU cycle
+						if ws.sruCycles != nil && supported.DatePublished != "" {
+							if sruCycle := ws.sruCycles.GetMinimumCutoffAfterDate(supported.DatePublished); sruCycle != nil {
+								sruCycleDate = sruCycle.ReleaseDate
+							}
+						}
+					}
+				}
+			}
+
+			if pocket != nil && pocket.Proposed.String() != "" {
+				proposed = pocket.Proposed.String()
+				if found && supported.CurrentUpstreamVersion != "" {
+					// Check if the upstream version is contained in the package version
+					if strings.Contains(proposed, supported.CurrentUpstreamVersion) {
+						proposedColor = "success"
+					} else {
+						proposedColor = "danger"
+						// If version is red (upstream is greater), find SRU cycle
+						if ws.sruCycles != nil && supported.DatePublished != "" && sruCycleDate == "-" {
+							if sruCycle := ws.sruCycles.GetMinimumCutoffAfterDate(supported.DatePublished); sruCycle != nil {
+								sruCycleDate = sruCycle.ReleaseDate
+							}
+						}
+					}
+				}
+			}
+
+			seriesData = append(seriesData, SeriesData{
+				Series:          series,
+				UpdatesSecurity: updates,
+				Proposed:        proposed,
+				UpstreamVersion: upstreamVersion,
+				ReleaseDate:     releaseDate,
+				SRUCycle:        sruCycleDate,
+				UpdatesColor:    updatesColor,
+				ProposedColor:   proposedColor,
+			})
+		}
+	} else if found && supported.CurrentUpstreamVersion != "" {
+		// Special case: upstream version exists but no Launchpad packages yet
+		// Show supported series with N/A for packages but upstream info
+		upstreamVersion := supported.CurrentUpstreamVersion
+		releaseDate := supported.DatePublished
 		sruCycleDate := "-"
-
-		if found && supported.CurrentUpstreamVersion != "" {
-			upstreamVersion = supported.CurrentUpstreamVersion
-			if supported.DatePublished != "" {
-				releaseDate = supported.DatePublished
+		
+		// Calculate SRU cycle for when this might be available
+		if ws.sruCycles != nil && supported.DatePublished != "" {
+			if sruCycle := ws.sruCycles.GetMinimumCutoffAfterDate(supported.DatePublished); sruCycle != nil {
+				sruCycleDate = sruCycle.ReleaseDate
 			}
 		}
 
-		if pocket != nil && pocket.UpdatesSecurity.String() != "" {
-			updates = pocket.UpdatesSecurity.String()
-			if found && supported.CurrentUpstreamVersion != "" {
-				// Check if the upstream version is contained in the package version
-				if strings.Contains(updates, supported.CurrentUpstreamVersion) {
-					updatesColor = "success"
-				} else {
-					updatesColor = "danger"
-					// If version is red (upstream is greater), find SRU cycle
-					if ws.sruCycles != nil && supported.DatePublished != "" {
-						if sruCycle := ws.sruCycles.GetMinimumCutoffAfterDate(supported.DatePublished); sruCycle != nil {
-							sruCycleDate = sruCycle.ReleaseDate
-						}
-					}
+		// Show entry for supported series where this driver should be available
+		for _, series := range orderedSeries {
+			// Check if this series is supported for this branch
+			if supported.IsSupported != nil {
+				seriesSupported := false
+				switch series {
+				case "bionic":
+					seriesSupported = supported.IsSupported["bionic"]
+				case "focal":
+					seriesSupported = supported.IsSupported["focal"]
+				case "jammy":
+					seriesSupported = supported.IsSupported["jammy"]
+				case "noble":
+					seriesSupported = supported.IsSupported["noble"]
+				case "plucky":
+					seriesSupported = supported.IsSupported["plucky"]
+				case "questing":
+					seriesSupported = supported.IsSupported["devel"] // devel maps to development series
+				}
+				
+				if seriesSupported {
+					seriesData = append(seriesData, SeriesData{
+						Series:          series,
+						UpdatesSecurity: "N/A",
+						Proposed:        "N/A",
+						UpstreamVersion: upstreamVersion,
+						ReleaseDate:     releaseDate,
+						SRUCycle:        sruCycleDate,
+						UpdatesColor:    "",
+						ProposedColor:   "",
+					})
 				}
 			}
 		}
-
-		if pocket != nil && pocket.Proposed.String() != "" {
-			proposed = pocket.Proposed.String()
-			if found && supported.CurrentUpstreamVersion != "" {
-				// Check if the upstream version is contained in the package version
-				if strings.Contains(proposed, supported.CurrentUpstreamVersion) {
-					proposedColor = "success"
-				} else {
-					proposedColor = "danger"
-					// If version is red (upstream is greater), find SRU cycle
-					if ws.sruCycles != nil && supported.DatePublished != "" && sruCycleDate == "-" {
-						if sruCycle := ws.sruCycles.GetMinimumCutoffAfterDate(supported.DatePublished); sruCycle != nil {
-							sruCycleDate = sruCycle.ReleaseDate
-						}
-					}
-				}
-			}
-		}
-
-		seriesData = append(seriesData, SeriesData{
-			Series:          series,
-			UpdatesSecurity: updates,
-			Proposed:        proposed,
-			UpstreamVersion: upstreamVersion,
-			ReleaseDate:     releaseDate,
-			SRUCycle:        sruCycleDate,
-			UpdatesColor:    updatesColor,
-			ProposedColor:   proposedColor,
-		})
 	}
 
 	return &PackageData{
