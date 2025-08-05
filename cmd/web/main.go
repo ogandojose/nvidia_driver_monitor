@@ -16,6 +16,7 @@ func main() {
 	var certFile = flag.String("cert", "server.crt", "Certificate file path (for HTTPS)")
 	var keyFile = flag.String("key", "server.key", "Private key file path (for HTTPS)")
 	var configFile = flag.String("config", "config.json", "Configuration file path")
+	var supportedReleasesFile = flag.String("releases", "data/supportedReleases.json", "Supported releases file path")
 	var rateLimit = flag.Int("rate-limit", 0, "Rate limit (requests per minute, 0 to use config)")
 	var templateDir = flag.String("templates", "templates", "Templates directory path")
 	flag.Parse()
@@ -40,7 +41,7 @@ func main() {
 	}
 
 	// Create and start web service with configuration
-	webService, err := web.NewWebServiceWithConfig(cfg, templatePath)
+	webService, err := web.NewWebServiceWithConfig(cfg, templatePath, *supportedReleasesFile)
 	if err != nil {
 		log.Fatalf("Failed to create web service: %v", err)
 	}

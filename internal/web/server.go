@@ -71,8 +71,9 @@ type WebService struct {
 	KeyFile     string
 
 	// Additional configuration
-	config       *config.Config
-	templatePath string
+	config                 *config.Config
+	templatePath           string
+	supportedReleasesPath  string
 }
 
 // NewWebService creates a new web service instance
@@ -83,7 +84,8 @@ func NewWebService() (*WebService, error) {
 			AllPackages:   make([]*PackageData, 0),
 			IsInitialized: false,
 		},
-		stopChan: make(chan bool),
+		stopChan:              make(chan bool),
+		supportedReleasesPath: "data/supportedReleases.json", // Default path for development
 	}
 
 	// Perform initial data load
@@ -107,7 +109,7 @@ func NewWebService() (*WebService, error) {
 }
 
 // NewWebServiceWithConfig creates a new web service instance with configuration
-func NewWebServiceWithConfig(cfg *config.Config, templatePath string) (*WebService, error) {
+func NewWebServiceWithConfig(cfg *config.Config, templatePath string, supportedReleasesPath string) (*WebService, error) {
 	// Set global configuration for packages
 	packages.SetPackagesConfig(cfg)
 
@@ -117,9 +119,10 @@ func NewWebServiceWithConfig(cfg *config.Config, templatePath string) (*WebServi
 			AllPackages:   make([]*PackageData, 0),
 			IsInitialized: false,
 		},
-		stopChan:     make(chan bool),
-		config:       cfg,
-		templatePath: templatePath,
+		stopChan:              make(chan bool),
+		config:                cfg,
+		templatePath:          templatePath,
+		supportedReleasesPath: supportedReleasesPath,
 	}
 
 	// Start initial data load in background
@@ -167,7 +170,7 @@ func (ws *WebService) refreshData() error {
 	}
 
 	// Read supported releases configuration
-	supportedReleases, err := releases.ReadSupportedReleases("data/supportedReleases.json")
+	supportedReleases, err := releases.ReadSupportedReleases(ws.supportedReleasesPath)
 	if err != nil {
 		return fmt.Errorf("failed to read supported releases: %v", err)
 	}
