@@ -187,20 +187,6 @@ chown -R "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR/static"
 find "$INSTALL_DIR/static" -type f \( -name "*.css" -o -name "*.js" \) -exec chmod 644 {} \;
 find "$INSTALL_DIR/static" -type d -exec chmod 755 {} \;
 
-# Copy existing certificates if they exist in source directory
-print_status "Checking for existing certificates to preserve..."
-if [ -f "./server.crt" ] && [ -f "./server.key" ]; then
-    print_status "Found existing certificates in source directory - copying to installation directory..."
-    cp "./server.crt" "$INSTALL_DIR/"
-    cp "./server.key" "$INSTALL_DIR/"
-    chown "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR/server.crt" "$INSTALL_DIR/server.key"
-    chmod 644 "$INSTALL_DIR/server.crt"
-    chmod 600 "$INSTALL_DIR/server.key"
-    print_status "Certificates copied to $INSTALL_DIR/"
-else
-    print_status "No certificates found in source directory"
-fi
-
 # Function to handle certificate management with interactive check
 handle_certificates() {
     local cert_file="$INSTALL_DIR/server.crt"
@@ -238,7 +224,17 @@ handle_certificates() {
             [Yy]|[Yy][Ee][Ss])
                 print_status "Regenerating certificates..."
                 rm -f "$cert_file" "$key_file"
-                generate_new_certificate "$cert_file" "$key_file"
+                # First try to copy from source directory if available
+                if [ -f "./server.crt" ] && [ -f "./server.key" ]; then
+                    print_status "Using certificates from source directory..."
+                    cp "./server.crt" "$cert_file"
+                    cp "./server.key" "$key_file"
+                    chown "$SERVICE_USER:$SERVICE_GROUP" "$cert_file" "$key_file"
+                    chmod 644 "$cert_file"
+                    chmod 600 "$key_file"
+                else
+                    generate_new_certificate "$cert_file" "$key_file"
+                fi
                 ;;
             *)
                 print_status "Keeping existing certificates"
@@ -250,8 +246,19 @@ handle_certificates() {
                 ;;
         esac
     else
-        print_status "No existing certificates found. Generating self-signed certificate..."
-        generate_new_certificate "$cert_file" "$key_file"
+        print_status "No existing certificates found."
+        # First try to copy from source directory if available
+        if [ -f "./server.crt" ] && [ -f "./server.key" ]; then
+            print_status "Using certificates from source directory..."
+            cp "./server.crt" "$cert_file"
+            cp "./server.key" "$key_file"
+            chown "$SERVICE_USER:$SERVICE_GROUP" "$cert_file" "$key_file"
+            chmod 644 "$cert_file"
+            chmod 600 "$key_file"
+        else
+            print_status "Generating new self-signed certificate..."
+            generate_new_certificate "$cert_file" "$key_file"
+        fi
     fi
 }
 
