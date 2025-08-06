@@ -122,8 +122,10 @@ func GetMaxSourceVersionsArchive(cfg *config.Config, packageName string) (*Sourc
 		// Ensure the map entry exists
 		if _, exists := versionMap[series]; !exists {
 			versionMap[series] = &SourceVersionPerPocket{}
-			versionMap[series].UpdatesSecurity = ver
-			versionMap[series].Proposed = ver
+			// Initialize with empty versions - they'll be set properly based on pocket
+			emptyVersion, _ := version.NewVersion("")
+			versionMap[series].UpdatesSecurity = emptyVersion
+			versionMap[series].Proposed = emptyVersion
 		}
 
 		switch entry.Pocket {
