@@ -187,12 +187,64 @@ chown -R "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR/static"
 find "$INSTALL_DIR/static" -type f \( -name "*.css" -o -name "*.js" \) -exec chmod 644 {} \;
 find "$INSTALL_DIR/static" -type d -exec chmod 755 {} \;
 
-# Function to generate self-signed certificate
-generate_certificate() {
+# Function to handle certificate management with interactive check
+handle_certificates() {
     local cert_file="$INSTALL_DIR/server.crt"
     local key_file="$INSTALL_DIR/server.key"
     
-    print_status "Generating self-signed SSL certificate..."
+    echo ""
+    print_status "Checking SSL certificate status..."
+    
+    # Check if certificates already exist
+    if [ -f "$cert_file" ] && [ -f "$key_file" ]; then
+        echo ""
+        print_warning "Existing certificates found:"
+        echo "  Certificate: $cert_file"
+        echo "  Private Key: $key_file"
+        
+        # Show certificate details if possible
+        if command -v openssl &> /dev/null; then
+            echo ""
+            echo "Certificate details:"
+            openssl x509 -in "$cert_file" -noout -subject -dates 2>/dev/null || echo "  (Certificate details unavailable)"
+        fi
+        
+        echo ""
+        echo "⚠️  Do you want to regenerate new self-signed certificates?"
+        echo "   This will overwrite your existing certificates!"
+        echo ""
+        echo "   [y] Yes, regenerate certificates"
+        echo "   [N] No, keep existing certificates (default)"
+        echo ""
+        echo "💡 If you have a purchased certificate, choose 'N' and replace the files manually."
+        echo ""
+        
+        read -p "Choice [N]: " -r choice
+        case "$choice" in
+            [Yy]|[Yy][Ee][Ss])
+                print_status "Regenerating certificates..."
+                rm -f "$cert_file" "$key_file"
+                generate_new_certificate "$cert_file" "$key_file"
+                ;;
+            *)
+                print_status "Keeping existing certificates"
+                echo "💡 Tips for using purchased certificates:"
+                echo "   1. Replace $cert_file with your certificate"
+                echo "   2. Replace $key_file with your private key"
+                echo "   3. Ensure proper permissions: cert=644, key=600"
+                echo "   4. Ensure ownership: $SERVICE_USER:$SERVICE_GROUP"
+                ;;
+        esac
+    else
+        print_status "No existing certificates found. Generating self-signed certificate..."
+        generate_new_certificate "$cert_file" "$key_file"
+    fi
+}
+
+# Function to generate new self-signed certificate
+generate_new_certificate() {
+    local cert_file="$1"
+    local key_file="$2"
     
     # Check if openssl is available
     if ! command -v openssl &> /dev/null; then
@@ -200,9 +252,11 @@ generate_certificate() {
         exit 1
     fi
     
+    print_status "Generating self-signed SSL certificate..."
+    
     # Generate private key and certificate
     openssl req -x509 -newkey rsa:4096 -keyout "$key_file" -out "$cert_file" \
-        -days 365 -nodes -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost" \
+        -days 365 -nodes -subj "/C=US/ST=Local/L=Local/O=NVIDIA Driver Monitor/CN=localhost" \
         2>/dev/null
     
     if [ $? -eq 0 ]; then
@@ -210,10 +264,20 @@ generate_certificate() {
         chmod 600 "$key_file"  # Private key should be readable only by owner
         chmod 644 "$cert_file"  # Certificate can be world-readable
         print_status "SSL certificate generated successfully"
+        echo "✅ Certificate details:"
+        echo "  📄 Certificate: $cert_file"
+        echo "  🔑 Private Key: $key_file"
+        echo "  📅 Valid for: 365 days"
+        echo "  🌐 Valid for: localhost, 127.0.0.1, ::1"
     else
         print_error "Failed to generate SSL certificate"
         exit 1
     fi
+}
+
+# Legacy function for backwards compatibility (now calls handle_certificates)
+generate_certificate() {
+    handle_certificates
 }
 
 # Install systemd service file
