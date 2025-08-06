@@ -103,15 +103,54 @@ run-web-testing:
 	@# Update config to enable testing mode (simplified approach)
 	go run $(WEB_SOURCE) -config config-testing.json
 
-# Generate self-signed certificate
+# Generate self-signed certificate (with existing certificate check)
 .PHONY: generate-cert
 generate-cert:
-	@echo "Generating self-signed certificate..."
+	@echo "🔐 SSL Certificate Management"
+	@echo "============================="
 	@if [ -f "server.crt" ] || [ -f "server.key" ]; then \
-		echo "Certificate files already exist. Use 'make clean-cert' to remove them first."; \
+		echo "⚠️  Existing certificate files found."; \
+		echo ""; \
+		if [ -f "server.crt" ]; then \
+			echo "📋 Current certificate details:"; \
+			openssl x509 -in server.crt -noout -subject -dates 2>/dev/null || echo "  (Certificate details unavailable)"; \
+		fi; \
+		echo ""; \
+		echo "Options:"; \
+		echo "  [r] Replace with new self-signed certificate"; \
+		echo "  [k] Keep existing certificates"; \
+		echo "  [v] View certificate details"; \
+		echo "  [d] Delete existing certificates"; \
+		echo ""; \
+		printf "Choice [k]: "; \
+		read -r choice; \
+		case "$$choice" in \
+			[Rr]|[Rr][Ee][Pp][Ll][Aa][Cc][Ee]) \
+				echo "🔄 Replacing certificates..."; \
+				rm -f server.crt server.key; \
+				$(MAKE) generate-new-cert; \
+				;; \
+			[Vv]|[Vv][Ii][Ee][Ww]) \
+				echo "📋 Certificate details:"; \
+				if [ -f "server.crt" ]; then \
+					openssl x509 -in server.crt -text -noout 2>/dev/null || echo "Cannot read certificate file."; \
+				else \
+					echo "No certificate file found."; \
+				fi; \
+				;; \
+			[Dd]|[Dd][Ee][Ll][Ee][Tt][Ee]) \
+				echo "🗑️  Removing existing certificates..."; \
+				rm -f server.crt server.key; \
+				echo "✅ Certificates removed."; \
+				;; \
+			*) \
+				echo "✅ Keeping existing certificates."; \
+				;; \
+		esac; \
 	else \
-		echo "Certificates will be generated automatically when running HTTPS mode."; \
-		echo "Use 'make run-web-https' or './$(WEB_BINARY) -https' to start HTTPS server."; \
+		echo "📄 No existing certificates found."; \
+		echo "🔄 Generating new self-signed certificate..."; \
+		$(MAKE) generate-new-cert; \
 	fi
 
 # Clean certificate files
@@ -284,7 +323,7 @@ help:
 	@echo "  run-mock         - Run mock server"
 	@echo "  run-mock-config  - Run mock server with configuration"
 	@echo "  run-web-testing   - Run web server in testing mode"
-	@echo "  generate-cert    - Generate self-signed certificate"
+	@echo "  generate-cert    - Interactive SSL certificate management"
 	@echo "  clean-cert       - Clean certificate files"
 	@echo "  kill-web         - Kill processes running on port 8080"
 	@echo "  test             - Run tests"
@@ -372,6 +411,74 @@ check-install-requirements:
 	fi
 	@echo "✅ All installation requirements met."
 	@echo "Note: Statistics will be persisted to statistics_data.json (created automatically)"
+	@$(MAKE) check-certificates
+
+# Check and optionally regenerate certificates
+.PHONY: check-certificates
+check-certificates:
+	@echo ""
+	@echo "🔐 Checking SSL certificate status..."
+	@if [ -f "server.crt" ] && [ -f "server.key" ]; then \
+		echo "📋 Existing certificates found:"; \
+		echo "  Certificate: server.crt"; \
+		echo "  Private Key: server.key"; \
+		echo ""; \
+		echo "Certificate details:"; \
+		openssl x509 -in server.crt -noout -subject -dates 2>/dev/null || echo "  (Certificate details unavailable)"; \
+		echo ""; \
+		echo "⚠️  Do you want to regenerate new self-signed certificates?"; \
+		echo "   This will overwrite your existing certificates!"; \
+		echo ""; \
+		echo "   [y] Yes, regenerate certificates"; \
+		echo "   [N] No, keep existing certificates (default)"; \
+		echo ""; \
+		printf "Choice [N]: "; \
+		read -r choice; \
+		case "$$choice" in \
+			[Yy]|[Yy][Ee][Ss]) \
+				echo "🔄 Regenerating certificates..."; \
+				rm -f server.crt server.key; \
+				$(MAKE) generate-new-cert; \
+				;; \
+			*) \
+				echo "✅ Keeping existing certificates."; \
+				echo "💡 Tip: If you have a purchased certificate, you can:"; \
+				echo "   1. Replace server.crt with your certificate"; \
+				echo "   2. Replace server.key with your private key"; \
+				echo "   3. Or use -cert and -key flags when starting the server"; \
+				;; \
+		esac; \
+	else \
+		echo "📄 No existing certificates found."; \
+		echo "🔄 Generating self-signed certificates for HTTPS..."; \
+		$(MAKE) generate-new-cert; \
+	fi
+
+# Generate new certificates (internal target)
+.PHONY: generate-new-cert
+generate-new-cert:
+	@echo "Generating self-signed certificate..."
+	@echo "This may take a moment..."
+	@./$(WEB_BINARY) -generate-cert-only 2>/dev/null || { \
+		echo "Certificate generation via binary failed, using direct method..."; \
+		openssl req -x509 -newkey rsa:2048 -keyout server.key -out server.crt \
+			-days 365 -nodes -subj "/C=US/ST=Local/L=Local/O=NVIDIA Driver Monitor/CN=localhost" 2>/dev/null || { \
+			echo "❌ Failed to generate certificate. Please install openssl."; \
+			exit 1; \
+		}; \
+	}
+	@if [ -f "server.crt" ] && [ -f "server.key" ]; then \
+		echo "✅ Certificate generated successfully:"; \
+		echo "  📄 Certificate: server.crt"; \
+		echo "  🔑 Private Key: server.key"; \
+		echo "  📅 Valid for: 365 days from now"; \
+		echo "  🌐 Valid for: localhost, 127.0.0.1, ::1"; \
+		chmod 644 server.crt 2>/dev/null || true; \
+		chmod 600 server.key 2>/dev/null || true; \
+	else \
+		echo "❌ Certificate generation failed."; \
+		exit 1; \
+	fi
 
 # Create distribution package
 .PHONY: dist
