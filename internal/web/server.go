@@ -71,9 +71,9 @@ type WebService struct {
 	KeyFile     string
 
 	// Additional configuration
-	config                 *config.Config
-	templatePath           string
-	supportedReleasesPath  string
+	config                *config.Config
+	templatePath          string
+	supportedReleasesPath string
 }
 
 // NewWebService creates a new web service instance
@@ -382,7 +382,7 @@ func (ws *WebService) generatePackageData(packageName string) (*PackageData, err
 		upstreamVersion := supported.CurrentUpstreamVersion
 		releaseDate := supported.DatePublished
 		sruCycleDate := "-"
-		
+
 		// Calculate SRU cycle for when this might be available
 		if ws.sruCycles != nil && supported.DatePublished != "" {
 			if sruCycle := ws.sruCycles.GetMinimumCutoffAfterDate(supported.DatePublished); sruCycle != nil {
@@ -409,7 +409,7 @@ func (ws *WebService) generatePackageData(packageName string) (*PackageData, err
 				case "questing":
 					seriesSupported = supported.IsSupported["devel"] // devel maps to development series
 				}
-				
+
 				if seriesSupported {
 					seriesData = append(seriesData, SeriesData{
 						Series:          series,
@@ -758,7 +758,7 @@ func (ws *WebService) Start(addr string) error {
 	// Configure server timeouts
 	var readTimeout, writeTimeout, idleTimeout time.Duration
 	var maxHeaderBytes int
-	
+
 	if ws.config != nil {
 		readTimeout = ws.config.RequestLimit.GetReadTimeout()
 		writeTimeout = ws.config.RequestLimit.GetWriteTimeout()
@@ -807,7 +807,7 @@ func (ws *WebService) Start(addr string) error {
 			MaxHeaderBytes: maxHeaderBytes,
 		}
 
-		log.Printf("Starting HTTPS server on %s with timeouts: read=%v, write=%v, idle=%v", 
+		log.Printf("Starting HTTPS server on %s with timeouts: read=%v, write=%v, idle=%v",
 			addr, readTimeout, writeTimeout, idleTimeout)
 		log.Printf("Access the service at: https://localhost%s", addr)
 		return server.ListenAndServeTLS("", "")
@@ -820,7 +820,7 @@ func (ws *WebService) Start(addr string) error {
 			MaxHeaderBytes: maxHeaderBytes,
 		}
 
-		log.Printf("Starting HTTP server on %s with timeouts: read=%v, write=%v, idle=%v", 
+		log.Printf("Starting HTTP server on %s with timeouts: read=%v, write=%v, idle=%v",
 			addr, readTimeout, writeTimeout, idleTimeout)
 		log.Printf("Access the service at: http://localhost%s", addr)
 		return server.ListenAndServe()

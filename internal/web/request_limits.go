@@ -14,14 +14,14 @@ func RequestLimitsMiddleware(maxBodySize int64, requestTimeout time.Duration) fu
 			if maxBodySize > 0 {
 				r.Body = http.MaxBytesReader(w, r.Body, maxBodySize)
 			}
-			
+
 			// Set request timeout to prevent slow request attacks
 			if requestTimeout > 0 {
 				ctx, cancel := context.WithTimeout(r.Context(), requestTimeout)
 				defer cancel()
 				r = r.WithContext(ctx)
 			}
-			
+
 			next.ServeHTTP(w, r)
 		})
 	}

@@ -30,7 +30,7 @@ func NewMockServer(dataDir string, port int) *MockServer {
 // Start starts the mock server
 func (ms *MockServer) Start() error {
 	http.HandleFunc("/", ms.handleRequest)
-	
+
 	addr := fmt.Sprintf(":%d", ms.port)
 	log.Printf("🚀 Mock Server starting on http://localhost%s", addr)
 	log.Printf("📂 Serving mock data from: %s", ms.dataDir)
@@ -39,26 +39,26 @@ func (ms *MockServer) Start() error {
 	log.Printf("   • NVIDIA APIs: http://localhost%s/nvidia/*", addr)
 	log.Printf("   • Kernel APIs: http://localhost%s/kernel/*", addr)
 	log.Printf("   • Ubuntu APIs: http://localhost%s/ubuntu/*", addr)
-	
+
 	return http.ListenAndServe(addr, nil)
 }
 
 // handleRequest routes requests to appropriate mock handlers
 func (ms *MockServer) handleRequest(w http.ResponseWriter, r *http.Request) {
 	log.Printf("📥 Mock request: %s %s", r.Method, r.URL.Path)
-	
+
 	// Add CORS headers for browser requests
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	
+
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-	
+
 	path := r.URL.Path
-	
+
 	switch {
 	case strings.HasPrefix(path, "/launchpad/"):
 		ms.handleLaunchpadAPI(w, r)
@@ -77,7 +77,7 @@ func (ms *MockServer) handleRequest(w http.ResponseWriter, r *http.Request) {
 func (ms *MockServer) handleLaunchpadAPI(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 	query := r.URL.Query()
-	
+
 	// Handle published sources API
 	if strings.Contains(path, "+archive/primary") && query.Get("ws.op") == "getPublishedSources" {
 		sourceName := query.Get("source_name")
@@ -85,7 +85,7 @@ func (ms *MockServer) handleLaunchpadAPI(w http.ResponseWriter, r *http.Request)
 			http.Error(w, "Missing source_name parameter", http.StatusBadRequest)
 			return
 		}
-		
+
 		// Check for series-specific requests
 		var seriesPrefix string
 		if strings.Contains(path, "/ubuntu/") && !strings.Contains(path, "/ubuntu/+archive/") {
@@ -98,7 +98,7 @@ func (ms *MockServer) handleLaunchpadAPI(w http.ResponseWriter, r *http.Request)
 				}
 			}
 		}
-		
+
 		// Try to serve series-specific file first, then fall back to generic
 		var filename string
 		if seriesPrefix != "" {
@@ -109,7 +109,7 @@ func (ms *MockServer) handleLaunchpadAPI(w http.ResponseWriter, r *http.Request)
 		} else {
 			filename = fmt.Sprintf("launchpad/sources/%s.json", sourceName)
 		}
-		
+
 		// Log parameter analysis for debugging
 		params := []string{}
 		if query.Get("created_since_date") != "" {
@@ -121,27 +121,32 @@ func (ms *MockServer) handleLaunchpadAPI(w http.ResponseWriter, r *http.Request)
 		if query.Get("order_by_date") == "true" {
 			params = append(params, "order_by_date=true")
 		}
-		
+
 		paramStr := ""
 		if len(params) > 0 {
 			paramStr = fmt.Sprintf(" [%s]", strings.Join(params, ", "))
 		}
-		
-		log.Printf("📦 Source query: %s%s%s", sourceName, 
-			func() string { if seriesPrefix != "" { return fmt.Sprintf(" [series=%s]", strings.TrimSuffix(seriesPrefix, "-")) }; return "" }(),
+
+		log.Printf("📦 Source query: %s%s%s", sourceName,
+			func() string {
+				if seriesPrefix != "" {
+					return fmt.Sprintf(" [series=%s]", strings.TrimSuffix(seriesPrefix, "-"))
+				}
+				return ""
+			}(),
 			paramStr)
 		ms.serveFile(w, filename, "application/json")
 		return
 	}
-	
-	// Handle published binaries API  
+
+	// Handle published binaries API
 	if strings.Contains(path, "+archive/primary") && query.Get("ws.op") == "getPublishedBinaries" {
 		binaryName := query.Get("binary_name")
 		if binaryName == "" {
 			http.Error(w, "Missing binary_name parameter", http.StatusBadRequest)
 			return
 		}
-		
+
 		// Check for series-specific requests
 		var seriesPrefix string
 		if strings.Contains(path, "/ubuntu/") && !strings.Contains(path, "/ubuntu/+archive/") {
@@ -153,7 +158,7 @@ func (ms *MockServer) handleLaunchpadAPI(w http.ResponseWriter, r *http.Request)
 				}
 			}
 		}
-		
+
 		// Try series-specific file first, then fall back to generic
 		var filename string
 		if seriesPrefix != "" {
@@ -164,19 +169,24 @@ func (ms *MockServer) handleLaunchpadAPI(w http.ResponseWriter, r *http.Request)
 		} else {
 			filename = fmt.Sprintf("launchpad/binaries/%s.json", binaryName)
 		}
-		
+
 		exactMatch := ""
 		if query.Get("exact_match") == "true" {
 			exactMatch = " [exact_match=true]"
 		}
-		
-		log.Printf("📦 Binary query: %s%s%s", binaryName, 
-			func() string { if seriesPrefix != "" { return fmt.Sprintf(" [series=%s]", strings.TrimSuffix(seriesPrefix, "-")) }; return "" }(),
+
+		log.Printf("📦 Binary query: %s%s%s", binaryName,
+			func() string {
+				if seriesPrefix != "" {
+					return fmt.Sprintf(" [series=%s]", strings.TrimSuffix(seriesPrefix, "-"))
+				}
+				return ""
+			}(),
 			exactMatch)
 		ms.serveFile(w, filename, "application/json")
 		return
 	}
-	
+
 	// Handle Ubuntu series API
 	if strings.HasPrefix(path, "/launchpad/ubuntu/") {
 		series := strings.TrimPrefix(path, "/launchpad/ubuntu/")
@@ -184,21 +194,21 @@ func (ms *MockServer) handleLaunchpadAPI(w http.ResponseWriter, r *http.Request)
 		if idx := strings.Index(series, "/"); idx != -1 {
 			series = series[:idx]
 		}
-		
+
 		if series != "" {
 			log.Printf("🐧 Series info: %s", series)
 			ms.serveFile(w, fmt.Sprintf("launchpad/series/%s.json", series), "application/json")
 			return
 		}
 	}
-	
+
 	ms.handleNotFound(w, r)
 }
 
 // handleNVIDIAAPI handles NVIDIA API mock responses
 func (ms *MockServer) handleNVIDIAAPI(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
-	
+
 	switch path {
 	case "/nvidia/datacenter/releases.json":
 		ms.serveFile(w, "nvidia/server-drivers.json", "application/json")
@@ -212,7 +222,7 @@ func (ms *MockServer) handleNVIDIAAPI(w http.ResponseWriter, r *http.Request) {
 // handleKernelAPI handles kernel API mock responses
 func (ms *MockServer) handleKernelAPI(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
-	
+
 	switch path {
 	case "/kernel/series.yaml":
 		ms.serveFile(w, "kernel/series.yaml", "text/yaml")
@@ -239,7 +249,7 @@ func (ms *MockServer) handleNotFound(w http.ResponseWriter, r *http.Request) {
 		"message": "This mock endpoint is not implemented yet",
 		"hint":    "Check the mock server configuration or add test data files",
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotFound)
 	json.NewEncoder(w).Encode(response)
@@ -248,7 +258,7 @@ func (ms *MockServer) handleNotFound(w http.ResponseWriter, r *http.Request) {
 // serveFile serves a file from the test data directory
 func (ms *MockServer) serveFile(w http.ResponseWriter, filename, contentType string) {
 	fullPath := filepath.Join(ms.dataDir, filename)
-	
+
 	// Check if file exists
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
 		log.Printf("⚠️  Mock data file not found: %s", fullPath)
@@ -256,7 +266,7 @@ func (ms *MockServer) serveFile(w http.ResponseWriter, filename, contentType str
 		ms.generateFallbackResponse(w, filename, contentType)
 		return
 	}
-	
+
 	// Serve the file
 	data, err := os.ReadFile(fullPath)
 	if err != nil {
@@ -264,7 +274,7 @@ func (ms *MockServer) serveFile(w http.ResponseWriter, filename, contentType str
 		http.Error(w, "Error reading mock data", http.StatusInternalServerError)
 		return
 	}
-	
+
 	w.Header().Set("Content-Type", contentType)
 	w.Write(data)
 	log.Printf("✅ Served mock data: %s", filename)
@@ -273,10 +283,10 @@ func (ms *MockServer) serveFile(w http.ResponseWriter, filename, contentType str
 // generateFallbackResponse generates a minimal response when data files don't exist
 func (ms *MockServer) generateFallbackResponse(w http.ResponseWriter, filename, contentType string) {
 	w.Header().Set("Content-Type", "application/json")
-	
+
 	// Generate minimal responses based on the API type
 	var response interface{}
-	
+
 	switch {
 	case strings.Contains(filename, "launchpad/sources/"):
 		response = map[string]interface{}{
@@ -301,26 +311,26 @@ func (ms *MockServer) generateFallbackResponse(w http.ResponseWriter, filename, 
 			"file":    filename,
 		}
 	}
-	
+
 	json.NewEncoder(w).Encode(response)
 	log.Printf("🔄 Generated fallback response for: %s", filename)
 }
 
 func main() {
 	var (
-		port     = flag.Int("port", 9999, "Port to run the mock server on")
-		dataDir  = flag.String("data-dir", "test-data", "Directory containing mock data files")
-		cfgFile  = flag.String("config", "", "Load port and data directory from config file")
+		port    = flag.Int("port", 9999, "Port to run the mock server on")
+		dataDir = flag.String("data-dir", "test-data", "Directory containing mock data files")
+		cfgFile = flag.String("config", "", "Load port and data directory from config file")
 	)
 	flag.Parse()
-	
+
 	// Load configuration if specified
 	if *cfgFile != "" {
 		cfg, err := config.LoadConfig(*cfgFile)
 		if err != nil {
 			log.Fatalf("Failed to load config: %v", err)
 		}
-		
+
 		if cfg.Testing.MockServerPort > 0 {
 			*port = cfg.Testing.MockServerPort
 		}
@@ -328,12 +338,12 @@ func main() {
 			*dataDir = cfg.Testing.DataDir
 		}
 	}
-	
+
 	// Create data directory if it doesn't exist
 	if err := os.MkdirAll(*dataDir, 0755); err != nil {
 		log.Fatalf("Failed to create data directory: %v", err)
 	}
-	
+
 	// Create and start mock server
 	server := NewMockServer(*dataDir, *port)
 	log.Fatal(server.Start())

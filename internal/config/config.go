@@ -55,7 +55,7 @@ type RateLimitConfig struct {
 type RequestLimitConfig struct {
 	MaxBodySize    int64  `json:"max_body_size"`    // Maximum request body size in bytes
 	ReadTimeout    string `json:"read_timeout"`     // Server read timeout duration
-	WriteTimeout   string `json:"write_timeout"`    // Server write timeout duration  
+	WriteTimeout   string `json:"write_timeout"`    // Server write timeout duration
 	IdleTimeout    string `json:"idle_timeout"`     // Server idle timeout duration
 	RequestTimeout string `json:"request_timeout"`  // Per-request timeout duration
 	MaxHeaderBytes int    `json:"max_header_bytes"` // Maximum request header size in bytes
@@ -66,12 +66,12 @@ func (r *RequestLimitConfig) GetReadTimeout() time.Duration {
 	if r.ReadTimeout == "" {
 		return 15 * time.Second // default
 	}
-	
+
 	duration, err := time.ParseDuration(r.ReadTimeout)
 	if err != nil {
 		return 15 * time.Second // fallback to default
 	}
-	
+
 	return duration
 }
 
@@ -80,12 +80,12 @@ func (r *RequestLimitConfig) GetWriteTimeout() time.Duration {
 	if r.WriteTimeout == "" {
 		return 15 * time.Second // default
 	}
-	
+
 	duration, err := time.ParseDuration(r.WriteTimeout)
 	if err != nil {
 		return 15 * time.Second // fallback to default
 	}
-	
+
 	return duration
 }
 
@@ -94,12 +94,12 @@ func (r *RequestLimitConfig) GetIdleTimeout() time.Duration {
 	if r.IdleTimeout == "" {
 		return 60 * time.Second // default
 	}
-	
+
 	duration, err := time.ParseDuration(r.IdleTimeout)
 	if err != nil {
 		return 60 * time.Second // fallback to default
 	}
-	
+
 	return duration
 }
 
@@ -108,12 +108,12 @@ func (r *RequestLimitConfig) GetRequestTimeout() time.Duration {
 	if r.RequestTimeout == "" {
 		return 30 * time.Second // default
 	}
-	
+
 	duration, err := time.ParseDuration(r.RequestTimeout)
 	if err != nil {
 		return 30 * time.Second // fallback to default
 	}
-	
+
 	return duration
 }
 
@@ -122,36 +122,36 @@ func (r *RequestLimitConfig) ValidateRequestLimits() error {
 	if r.MaxBodySize < 0 {
 		return fmt.Errorf("max_body_size cannot be negative")
 	}
-	
+
 	if r.MaxHeaderBytes < 0 {
 		return fmt.Errorf("max_header_bytes cannot be negative")
 	}
-	
+
 	// Validate timeout formats by parsing them
 	if r.ReadTimeout != "" {
 		if _, err := time.ParseDuration(r.ReadTimeout); err != nil {
 			return fmt.Errorf("invalid read_timeout format: %v", err)
 		}
 	}
-	
+
 	if r.WriteTimeout != "" {
 		if _, err := time.ParseDuration(r.WriteTimeout); err != nil {
 			return fmt.Errorf("invalid write_timeout format: %v", err)
 		}
 	}
-	
+
 	if r.IdleTimeout != "" {
 		if _, err := time.ParseDuration(r.IdleTimeout); err != nil {
 			return fmt.Errorf("invalid idle_timeout format: %v", err)
 		}
 	}
-	
+
 	if r.RequestTimeout != "" {
 		if _, err := time.ParseDuration(r.RequestTimeout); err != nil {
 			return fmt.Errorf("invalid request_timeout format: %v", err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -257,7 +257,7 @@ type KernelURLs struct {
 
 // HTTPConfig holds HTTP client configuration
 type HTTPConfig struct {
-	Timeout   string `json:"timeout"`        // Duration string like "10s"
+	Timeout   string `json:"timeout"` // Duration string like "10s"
 	Retries   int    `json:"retries"`
 	UserAgent string `json:"user_agent"`
 }

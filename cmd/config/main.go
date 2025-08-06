@@ -107,9 +107,9 @@ func validateConfig(configFile string) {
 	}
 
 	// Validate duration parsing
-	cfg.Cache.GetRefreshInterval() // Just call it to test
-	cfg.HTTP.GetTimeout()          // Just call it to test
-	cfg.RequestLimit.GetReadTimeout()    // Test request limit timeouts
+	cfg.Cache.GetRefreshInterval()    // Just call it to test
+	cfg.HTTP.GetTimeout()             // Just call it to test
+	cfg.RequestLimit.GetReadTimeout() // Test request limit timeouts
 	cfg.RequestLimit.GetWriteTimeout()
 	cfg.RequestLimit.GetIdleTimeout()
 	cfg.RequestLimit.GetRequestTimeout()

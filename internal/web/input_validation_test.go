@@ -11,9 +11,9 @@ func TestInputValidator_ValidateQueryParams(t *testing.T) {
 	validator := NewInputValidator()
 
 	tests := []struct {
-		name       string
+		name        string
 		queryParams map[string]string
-		expected   map[string]string
+		expected    map[string]string
 	}{
 		{
 			name: "Valid series parameter",
@@ -164,7 +164,7 @@ func TestInputValidator_validateSeries(t *testing.T) {
 		{"invalid-series", ""},
 		{"", ""},
 		{"toolong series name", ""},
-		{"xyz", ""}, // Too short but valid pattern
+		{"xyz", ""},                // Too short but valid pattern
 		{"validname", "validname"}, // Future series pattern
 	}
 
@@ -190,11 +190,11 @@ func TestInputValidator_validatePackageName(t *testing.T) {
 		{"package.name", "package.name"},
 		{"package+name", "package+name"},
 		{"1package", "1package"}, // Starting with digit is valid
-		{"Package", ""}, // Uppercase not allowed
-		{"package@name", ""}, // @ not allowed
-		{"package name", ""}, // Space not allowed
+		{"Package", ""},          // Uppercase not allowed
+		{"package@name", ""},     // @ not allowed
+		{"package name", ""},     // Space not allowed
 		{"", ""},
-		{"a", ""}, // Too short
+		{"a", ""},                       // Too short
 		{string(make([]byte, 300)), ""}, // Too long
 	}
 
@@ -230,7 +230,7 @@ func TestInputValidator_validatePositiveInt(t *testing.T) {
 		t.Run(tt.input, func(t *testing.T) {
 			result := validator.validatePositiveInt(tt.input, tt.min, tt.max)
 			if result != tt.expected {
-				t.Errorf("validatePositiveInt(%q, %d, %d) = %d, expected %d", 
+				t.Errorf("validatePositiveInt(%q, %d, %d) = %d, expected %d",
 					tt.input, tt.min, tt.max, result, tt.expected)
 			}
 		})
@@ -291,8 +291,8 @@ func TestInputSanitizationMiddleware(t *testing.T) {
 			expectedHeader: "focal",
 		},
 		{
-			name: "No parameters",
-			queryParams: map[string]string{},
+			name:           "No parameters",
+			queryParams:    map[string]string{},
 			expectedStatus: http.StatusOK,
 			expectedHeader: "",
 		},
