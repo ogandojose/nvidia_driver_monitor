@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -142,12 +143,12 @@ func extractDomain(url string) string {
 
 	domain := url[start:end]
 
-	// Categorize known domains
-	if domain == "api.launchpad.net" {
+	// Categorize known domains - use contains for more robust matching
+	if strings.Contains(domain, "launchpad.net") || domain == "localhost" && strings.Contains(url, "launchpad") {
 		return "launchpad"
-	} else if domain == "docs.nvidia.com" || domain == "www.nvidia.com" {
+	} else if strings.Contains(domain, "nvidia.com") {
 		return "nvidia"
-	} else if domain == "kernel.ubuntu.com" {
+	} else if strings.Contains(domain, "kernel.ubuntu.com") {
 		return "ubuntu-kernel"
 	}
 
