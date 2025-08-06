@@ -187,6 +187,20 @@ chown -R "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR/static"
 find "$INSTALL_DIR/static" -type f \( -name "*.css" -o -name "*.js" \) -exec chmod 644 {} \;
 find "$INSTALL_DIR/static" -type d -exec chmod 755 {} \;
 
+# Copy existing certificates if they exist in source directory
+print_status "Checking for existing certificates to preserve..."
+if [ -f "./server.crt" ] && [ -f "./server.key" ]; then
+    print_status "Found existing certificates in source directory - copying to installation directory..."
+    cp "./server.crt" "$INSTALL_DIR/"
+    cp "./server.key" "$INSTALL_DIR/"
+    chown "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR/server.crt" "$INSTALL_DIR/server.key"
+    chmod 644 "$INSTALL_DIR/server.crt"
+    chmod 600 "$INSTALL_DIR/server.key"
+    print_status "Certificates copied to $INSTALL_DIR/"
+else
+    print_status "No certificates found in source directory"
+fi
+
 # Function to handle certificate management with interactive check
 handle_certificates() {
     local cert_file="$INSTALL_DIR/server.crt"
