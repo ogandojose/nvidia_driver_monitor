@@ -26,12 +26,48 @@ import (
 	"nvidia_driver_monitor/internal/packages"
 	"nvidia_driver_monitor/internal/releases"
 	"nvidia_driver_monitor/internal/sru"
+
+	version "github.com/knqyf263/go-deb-version"
 )
+
+// majorVersion extracts the leading numeric component (major) from a Debian version string.
+// Examples:
+//
+//	575.57.08-0ubuntu0.22.04.2 -> 575
+//	550.163.01-0ubuntu1         -> 550
+//
+// If no leading digits are present or input is empty, returns "-".
+func majorVersion(v string) string {
+	if v == "" {
+		return "-"
+	}
+	// Split at first non-digit/dot and first dash; we only need the part before dash
+	// First, cut at dash which typically starts Debian revision
+	base := v
+	if i := strings.IndexRune(v, '-'); i >= 0 {
+		base = v[:i]
+	}
+	// Take the part before the first dot as major
+	if j := strings.IndexRune(base, '.'); j >= 0 {
+		base = base[:j]
+	}
+	// Ensure it's digits
+	for _, r := range base {
+		if r < '0' || r > '9' {
+			return "-"
+		}
+	}
+	if base == "" {
+		return "-"
+	}
+	return base
+}
 
 // SeriesData represents the data for a single series row
 type SeriesData struct {
 	Series          string
 	UpdatesSecurity string
+	PocketMarkers   string
 	Proposed        string
 	UpstreamVersion string
 	ReleaseDate     string
@@ -315,6 +351,7 @@ func (ws *WebService) generatePackageData(packageName string) (*PackageData, err
 			}
 
 			updates := "-"
+			pocketMarkers := ""
 			proposed := "-"
 			updatesColor := ""
 			proposedColor := ""
@@ -329,8 +366,44 @@ func (ws *WebService) generatePackageData(packageName string) (*PackageData, err
 				}
 			}
 
-			if pocket != nil && pocket.UpdatesSecurity.String() != "" {
-				updates = pocket.UpdatesSecurity.String()
+			if pocket != nil {
+				// Determine greatest version among Release/Updates/Security
+				bestSet := false
+				var best version.Version
+				if pocket.Release.String() != "" {
+					best = pocket.Release
+					bestSet = true
+				}
+				if pocket.Updates.String() != "" {
+					if !bestSet || pocket.Updates.GreaterThan(best) {
+						best = pocket.Updates
+						bestSet = true
+					}
+				}
+				if pocket.Security.String() != "" {
+					if !bestSet || pocket.Security.GreaterThan(best) {
+						best = pocket.Security
+						bestSet = true
+					}
+				}
+
+				if bestSet {
+					updates = best.String()
+					// Build pocket markers in order U/S/R
+					u := "-"
+					s := "-"
+					r := "-"
+					if pocket.Updates.String() == updates {
+						u = "U"
+					}
+					if pocket.Security.String() == updates {
+						s = "S"
+					}
+					if pocket.Release.String() == updates {
+						r = "R"
+					}
+					pocketMarkers = fmt.Sprintf(" (%s/%s/%s)", u, s, r)
+				}
 				if found && supported.CurrentUpstreamVersion != "" {
 					// Check if the upstream version is contained in the package version
 					if strings.Contains(updates, supported.CurrentUpstreamVersion) {
@@ -368,6 +441,7 @@ func (ws *WebService) generatePackageData(packageName string) (*PackageData, err
 			seriesData = append(seriesData, SeriesData{
 				Series:          series,
 				UpdatesSecurity: updates,
+				PocketMarkers:   pocketMarkers,
 				Proposed:        proposed,
 				UpstreamVersion: upstreamVersion,
 				ReleaseDate:     releaseDate,
@@ -599,7 +673,7 @@ func (ws *WebService) packageHandler(w http.ResponseWriter, r *http.Request) {
                 <thead class="table-dark">
                     <tr>
                         <th>Series</th>
-                        <th>Updates/Security</th>
+						<th>Updates/Security/Release</th>
                         <th>Proposed</th>
                         <th>Upstream Version</th>
                         <th>Release Date</th>
@@ -611,7 +685,7 @@ func (ws *WebService) packageHandler(w http.ResponseWriter, r *http.Request) {
                     <tr>
                         <td><strong>{{.Series}}</strong></td>
                         <td class="{{if eq .UpdatesColor "success"}}table-success{{else if eq .UpdatesColor "danger"}}table-danger{{end}}">
-                            {{.UpdatesSecurity}}
+							{{.UpdatesSecurity}}{{.PocketMarkers}}
                         </td>
                         <td class="{{if eq .ProposedColor "success"}}table-success{{else if eq .ProposedColor "danger"}}table-danger{{end}}">
                             {{.Proposed}}

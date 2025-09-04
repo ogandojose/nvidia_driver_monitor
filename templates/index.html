@@ -97,7 +97,7 @@
                     <thead class="table-dark">
                         <tr style="color: var(--ubuntu-text-bg-2) !important;">
                             <th style="color: var(--ubuntu-text-bg-2) !important; width: 10%;">Series</th>
-                            <th style="color: var(--ubuntu-text-bg-2) !important; width: 30%;">Updates/Security</th>
+                            <th style="color: var(--ubuntu-text-bg-2) !important; width: 30%;">Updates/Security/Release</th>
                             <th style="color: var(--ubuntu-text-bg-2) !important; width: 30%;">Proposed</th>
                             <th style="color: var(--ubuntu-text-bg-2) !important; width: 10%;">Upstream Version</th>
                             <th style="color: var(--ubuntu-text-bg-2) !important; width: 10%;">Release Date</th>
@@ -109,7 +109,7 @@
                         <tr>
                             <td><strong>{{.Series}}</strong></td>
                             <td class="{{if eq .UpdatesColor "success"}}table-success{{else if eq .UpdatesColor "danger"}}table-danger{{end}}">
-                                {{.UpdatesSecurity}}
+                                {{.UpdatesSecurity}}{{.PocketMarkers}}
                             </td>
                             <td class="{{if eq .ProposedColor "success"}}table-success{{else if eq .ProposedColor "danger"}}table-danger{{end}}">
                                 {{.Proposed}}

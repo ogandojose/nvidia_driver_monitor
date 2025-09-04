@@ -23,6 +23,7 @@ type PackageHandler struct {
 type SeriesData struct {
 	Series          string
 	UpdatesSecurity string
+	PocketMarkers   string
 	Proposed        string
 	UpstreamVersion string
 	ReleaseDate     string
@@ -136,8 +137,8 @@ func (h *PackageHandler) PackageHandler(w http.ResponseWriter, r *http.Request, 
                 <thead class="table-dark">
                     <tr>
                         <th>Series</th>
-                        <th>Updates/Security</th>
-                        <th>Proposed</th>
+						<th>Updates/Security/Release</th>
+						<th>Proposed</th>
                         <th>Upstream Version</th>
                         <th>Release Date</th>
                         <th>SRU Cycle</th>
@@ -148,7 +149,7 @@ func (h *PackageHandler) PackageHandler(w http.ResponseWriter, r *http.Request, 
                     <tr>
                         <td><strong>{{.Series}}</strong></td>
                         <td>
-                            <span class="badge" style="background-color: {{.UpdatesColor}}">{{.UpdatesSecurity}}</span>
+							<span class="badge" style="background-color: {{.UpdatesColor}}">{{.UpdatesSecurity}}{{.PocketMarkers}}</span>
                         </td>
                         <td>
                             <span class="badge" style="background-color: {{.ProposedColor}}">{{.Proposed}}</span>

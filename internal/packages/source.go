@@ -45,7 +45,11 @@ type SourcePubHistory struct {
 // SourceVersionPerPocket holds the latest version per pocket for a source package
 type SourceVersionPerPocket struct {
 	UpdatesSecurity version.Version
-	Proposed        version.Version
+	// Track individual pockets as well for major breakdowns
+	Release  version.Version
+	Updates  version.Version
+	Security version.Version
+	Proposed version.Version
 }
 
 // SourceVersionPerSeries holds package versions per series
@@ -125,6 +129,9 @@ func GetMaxSourceVersionsArchive(cfg *config.Config, packageName string) (*Sourc
 			// Initialize with empty versions - they'll be set properly based on pocket
 			emptyVersion, _ := version.NewVersion("")
 			versionMap[series].UpdatesSecurity = emptyVersion
+			versionMap[series].Release = emptyVersion
+			versionMap[series].Updates = emptyVersion
+			versionMap[series].Security = emptyVersion
 			versionMap[series].Proposed = emptyVersion
 		}
 
@@ -133,9 +140,25 @@ func GetMaxSourceVersionsArchive(cfg *config.Config, packageName string) (*Sourc
 			if ver.GreaterThan(versionMap[series].Proposed) {
 				versionMap[series].Proposed = ver
 			}
-		case "Updates", "Security":
+		case "Updates":
+			// Track Updates individually and merged Updates/Security
+			if ver.GreaterThan(versionMap[series].Updates) {
+				versionMap[series].Updates = ver
+			}
 			if ver.GreaterThan(versionMap[series].UpdatesSecurity) {
 				versionMap[series].UpdatesSecurity = ver
+			}
+		case "Security":
+			// Track Security individually and merged Updates/Security
+			if ver.GreaterThan(versionMap[series].Security) {
+				versionMap[series].Security = ver
+			}
+			if ver.GreaterThan(versionMap[series].UpdatesSecurity) {
+				versionMap[series].UpdatesSecurity = ver
+			}
+		case "Release":
+			if ver.GreaterThan(versionMap[series].Release) {
+				versionMap[series].Release = ver
 			}
 		default:
 			// ignore
