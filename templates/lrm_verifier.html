@@ -305,10 +305,15 @@
                             </div>
                             
                             <div class="d-flex align-items-center">
-                                <label for="seriesFilter" class="form-label me-2 mb-0 small text-nowrap">Series:</label>
-                                <select id="seriesFilter" class="form-select form-select-sm" style="width: auto;">
-                                    <option value="">All</option>
-                                </select>
+                                <label class="form-label me-2 mb-0 small text-nowrap">Series:</label>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="seriesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        All
+                                    </button>
+                                    <div class="dropdown-menu p-2" aria-labelledby="seriesDropdown" id="seriesDropdownMenu" style="max-height: 300px; overflow-y: auto; min-width: 12rem;">
+                                        <!-- Series checkboxes will be populated here -->
+                                    </div>
+                                </div>
                             </div>
                             
                             <div class="d-flex align-items-center">
@@ -556,7 +561,7 @@
                 
                 // Add event listeners for all filters
                 document.getElementById('lrmSupportedFilter').addEventListener('change', handleLrmFilterChange);
-                document.getElementById('seriesFilter').addEventListener('change', handleOtherFilterChange);
+                // Series multi-select handled via checkbox events; listeners are attached on populate
                 document.getElementById('routingFilter').addEventListener('change', handleOtherFilterChange);
                 
                 // Status dropdown event listeners
@@ -626,7 +631,7 @@
             
             // Add event listeners
             document.getElementById('lrmSupportedFilter').addEventListener('change', handleLrmFilterChange);
-            document.getElementById('seriesFilter').addEventListener('change', handleOtherFilterChange);
+            // Series multi-select handled via checkbox events; listeners are attached on populate
             document.getElementById('routingFilter').addEventListener('change', handleOtherFilterChange);
             
             // Status dropdown event listeners
@@ -770,17 +775,110 @@
             `;
         }
 
+        // Manage selected series in a Set
+        let selectedSeries = new Set();
+
+        function parseSeriesNumeric(s) {
+            // Expect formats like "25.10", "24.04"; fallback returns null
+            if (!s || typeof s !== 'string') return null;
+            const m = s.match(/^(\d{2})\.(\d{2})/);
+            if (!m) return null;
+            return { major: parseInt(m[1], 10), minor: parseInt(m[2], 10) };
+        }
+
         function populateSeriesFilter() {
             const seriesSet = new Set();
             originalData.forEach(item => seriesSet.add(item.Series || item.series));
-            
-            const seriesFilter = document.getElementById('seriesFilter');
-            seriesSet.forEach(series => {
-                const option = document.createElement('option');
-                option.value = series;
-                option.textContent = series;
-                seriesFilter.appendChild(option);
+            const seriesList = Array.from(seriesSet);
+
+            // Sort by number.number descending (major desc, then minor desc); non-matching last
+            seriesList.sort((a, b) => {
+                const pa = parseSeriesNumeric(a);
+                const pb = parseSeriesNumeric(b);
+                if (pa && pb) {
+                    if (pa.major !== pb.major) return pb.major - pa.major;
+                    return pb.minor - pa.minor;
+                }
+                if (pa && !pb) return -1; // numeric first
+                if (!pa && pb) return 1;
+                return (b || '').localeCompare(a || '');
             });
+
+            const menu = document.getElementById('seriesDropdownMenu');
+            menu.innerHTML = '';
+
+            // Add helper actions
+            const actions = document.createElement('div');
+            actions.className = 'd-flex justify-content-between align-items-center mb-2';
+            actions.innerHTML = `
+                <button type="button" class="btn btn-sm btn-link p-0" id="seriesSelectAll">Select all</button>
+                <button type="button" class="btn btn-sm btn-link p-0" id="seriesClearAll">Clear all</button>
+            `;
+            menu.appendChild(actions);
+
+            // Create checkbox items
+            seriesList.forEach(series => {
+                const id = `series-${series.replace(/[^a-zA-Z0-9_.-]/g, '_')}`;
+                const wrapper = document.createElement('div');
+                wrapper.className = 'form-check';
+                wrapper.innerHTML = `
+                    <input class="form-check-input series-option" type="checkbox" value="${series}" id="${id}">
+                    <label class="form-check-label" for="${id}">${series}</label>
+                `;
+                menu.appendChild(wrapper);
+            });
+
+            // Attach listeners
+            menu.querySelectorAll('.series-option').forEach(cb => {
+                cb.addEventListener('change', () => {
+                    if (cb.checked) {
+                        selectedSeries.add(cb.value);
+                    } else {
+                        selectedSeries.delete(cb.value);
+                    }
+                    updateSeriesDropdownLabel();
+                    applyFilters();
+                });
+            });
+
+            const selectAllBtn = document.getElementById('seriesSelectAll');
+            const clearAllBtn = document.getElementById('seriesClearAll');
+            if (selectAllBtn) {
+                selectAllBtn.addEventListener('click', () => {
+                    selectedSeries = new Set(seriesList);
+                    menu.querySelectorAll('.series-option').forEach(cb => { cb.checked = true; });
+                    updateSeriesDropdownLabel();
+                    applyFilters();
+                });
+            }
+            if (clearAllBtn) {
+                clearAllBtn.addEventListener('click', () => {
+                    selectedSeries.clear();
+                    menu.querySelectorAll('.series-option').forEach(cb => { cb.checked = false; });
+                    updateSeriesDropdownLabel();
+                    applyFilters();
+                });
+            }
+
+            // Restore selections if any
+            if (selectedSeries.size > 0) {
+                menu.querySelectorAll('.series-option').forEach(cb => {
+                    cb.checked = selectedSeries.has(cb.value);
+                });
+            }
+            updateSeriesDropdownLabel();
+        }
+
+        function updateSeriesDropdownLabel() {
+            const btn = document.getElementById('seriesDropdown');
+            if (!btn) return;
+            if (selectedSeries.size === 0) {
+                btn.textContent = 'All';
+            } else if (selectedSeries.size <= 3) {
+                btn.textContent = Array.from(selectedSeries).sort().join(', ');
+            } else {
+                btn.textContent = `${selectedSeries.size} selected`;
+            }
         }
 
         function populateRoutingFilter() {
@@ -811,7 +909,11 @@
             // Only reset filters when switching to 'all' LRM view
             if (lrmFilter === 'all') {
                 // When LRM filter is set to 'all', reset other filters to defaults for clarity
-                document.getElementById('seriesFilter').value = '';
+                selectedSeries.clear();
+                // Uncheck all series options
+                const menu = document.getElementById('seriesDropdownMenu');
+                if (menu) menu.querySelectorAll('.series-option').forEach(cb => { cb.checked = false; });
+                updateSeriesDropdownLabel();
                 document.getElementById('supportedFilter').value = 'true';
                 document.getElementById('ltsFilter').value = 'all';
                 document.getElementById('esmFilter').value = 'all';
@@ -828,7 +930,7 @@
 
         function applyFilters() {
             const lrmSupportedFilter = document.getElementById('lrmSupportedFilter').value;
-            const seriesFilter = document.getElementById('seriesFilter').value;
+            const seriesSelected = Array.from(selectedSeries);
             const routingFilter = document.getElementById('routingFilter').value;
             
             // Get status filter dropdown values
@@ -851,9 +953,12 @@
                     }
                 }
                 
-                // Apply series filter
-                if (seriesFilter && (item.Series || item.series) !== seriesFilter) {
-                    matches = false;
+                // Apply series filter (multiple allowed); if none selected, treat as All
+                if (seriesSelected.length > 0) {
+                    const val = (item.Series || item.series);
+                    if (!seriesSelected.includes(val)) {
+                        matches = false;
+                    }
                 }
                 
                 // Apply routing filter
