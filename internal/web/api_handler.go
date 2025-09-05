@@ -12,6 +12,10 @@ import (
 	"nvidia_driver_monitor/internal/stats"
 )
 
+// tryGetLRMData is a test seam that can be overridden in unit tests.
+// By default it points to lrm.TryGetCachedLRMData.
+var tryGetLRMData = lrm.TryGetCachedLRMData
+
 // APIHandler handles REST API endpoints
 type APIHandler struct{}
 
@@ -39,19 +43,28 @@ func (h *APIHandler) LRMDataHandler(w http.ResponseWriter, r *http.Request) {
 	limit := r.URL.Query().Get("limit")
 	offset := r.URL.Query().Get("offset")
 
-	// Fetch LRM data - use cached version to avoid refetching if less than 5 minutes old
-	lrmData, err := lrm.GetCachedLRMData()
+	// Fetch LRM data - prefer non-blocking cached response; fall back to placeholder
+	lrmData, err := tryGetLRMData()
 	if err != nil {
-		http.Error(w, `{"error": "Failed to fetch LRM data"}`, http.StatusInternalServerError)
-		return
+		now := time.Now()
+		lrmData = &lrm.LRMVerifierData{
+			KernelResults: []lrm.KernelLRMResult{},
+			TotalKernels:  0,
+			SupportedLRM:  0,
+			LastUpdated:   now,
+			IsInitialized: false,
+		}
 	}
 
 	// Debug logging
 	log.Printf("API Handler - Debug function returned %d kernels, TotalKernels: %d, SupportedLRM: %d",
 		len(lrmData.KernelResults), lrmData.TotalKernels, lrmData.SupportedLRM)
 
-	// Apply filters
+	// Apply filters (ensure non-nil slice so JSON encodes as [] not null)
 	filteredResults := lrmData.KernelResults
+	if filteredResults == nil {
+		filteredResults = make([]lrm.KernelLRMResult, 0)
+	}
 	if series != "" {
 		filteredResults = filterBySeries(filteredResults, series)
 	}
@@ -75,6 +88,7 @@ func (h *APIHandler) LRMDataHandler(w http.ResponseWriter, r *http.Request) {
 			SupportedLRM:  lrmData.SupportedLRM,
 			LastUpdated:   lrmData.LastUpdated,
 			IsInitialized: lrmData.IsInitialized,
+			Progress:      lrm.GetProgress(),
 		},
 		Meta: APIMeta{
 			Total:    len(lrmData.KernelResults),
@@ -83,6 +97,25 @@ func (h *APIHandler) LRMDataHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, `{"error": "Failed to encode response"}`, http.StatusInternalServerError)
+		return
+	}
+}
+
+// LRMProgressHandler returns just the LRM progress as JSON
+func (h *APIHandler) LRMProgressHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	prog := lrm.GetProgress()
+	if err := json.NewEncoder(w).Encode(prog); err != nil {
 		http.Error(w, `{"error": "Failed to encode response"}`, http.StatusInternalServerError)
 		return
 	}
@@ -177,6 +210,7 @@ type APILRMData struct {
 	SupportedLRM  int                   `json:"supported_lrm"`
 	LastUpdated   interface{}           `json:"last_updated"`
 	IsInitialized bool                  `json:"is_initialized"`
+	Progress      lrm.LRMProgress       `json:"progress"`
 }
 
 type APIMeta struct {
