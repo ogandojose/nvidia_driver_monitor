@@ -197,3 +197,46 @@ func setupStructuredLogging() {
 **To Reach 10/10**: Implement the Critical and High Priority items above, focusing on enhanced security, monitoring, and operational procedures.
 
 The service is already suitable for internal/development use and could be deployed in production with minimal additional work on the Critical items.
+
+---
+
+## 📌 Update: Production readiness assessment — 2025-09-05
+
+### Snapshot
+- Strong
+  - Security headers middleware and tests
+  - Request body/timeout limits and max header bytes
+  - Per-IP rate limiting with tests
+  - Basic JSON health endpoint
+  - TLS bootstrap (self-signed fallback)
+- Gaps
+  - Prometheus metrics endpoint (/metrics) not present
+  - No signal-based graceful shutdown (http.Server.Shutdown + background stop)
+  - Logging not structured (JSON) and some log.Fatalf in library code
+  - Health checks are shallow (no dependencies/cache freshness/cert status)
+  - No container/K8s manifests
+  - Rate limiter not proxy-aware (X-Forwarded-For)
+  - No structured access/audit logs
+
+### Priority action plan
+- Critical (do next)
+  - Metrics: add /metrics (promhttp). Expose HTTP request count/status, latency histogram, in-flight; background refresh last run/duration/success counters; rate-limit allow/deny counters.
+  - Graceful shutdown: run with http.Server; trap SIGINT/SIGTERM; call Shutdown(ctx); ensure background refresh and caches stop via context.
+  - Logging: switch to structured JSON (slog or zap). Add correlation/request IDs, remote IP, method, path, status, duration. Replace log.Fatalf in libraries with error returns handled centrally.
+- High
+  - Health v2: include dependency reachability (Launchpad), cache freshness thresholds, TLS cert expiry days, rate limiter status; return healthy/degraded/unhealthy.
+  - Proxy awareness: optional trust of X-Forwarded-For while behind a proxy/LB.
+  - Access logs: structured access log middleware; sampling configurable.
+- Medium
+  - Containerization: Dockerfile (non-root, distroless/alpine) and example K8s manifests; keep systemd support.
+  - Config polish: env overrides, secret redaction in logs; doc log rotation guidance.
+  - Optional: pprof under admin-only toggle.
+
+### Suggested implementation order
+1) Metrics + access logging.
+2) Graceful shutdown with signal handling and context propagation.
+3) Remove log.Fatalf from libraries; centralize error handling with structured logs.
+4) Health v2 response and docs.
+5) Proxy-aware client IP + container artifacts.
+
+This section captures the agreed plan as of 2025‑09‑05 and can be used to track closure of Critical and High items to reach 10/10 readiness.

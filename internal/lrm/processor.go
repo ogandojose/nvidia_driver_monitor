@@ -30,6 +30,13 @@ var (
 	MaxConcurrency = 10 // Default concurrent workers for kernel querying
 	// Configuration instance
 	processorConfig *config.Config
+
+	// Progress tracking for initialization/refresh
+	progressMux        sync.RWMutex
+	progressTotal      int
+	progressCompleted  int
+	progressInProgress bool
+	progressStart      time.Time
 )
 
 // SetProcessorConfig sets the global configuration for the processor
@@ -328,6 +335,14 @@ func fetchLatestVersions(kernels []KernelLRMResult) ([]KernelLRMResult, error) {
 	log.Printf("Fetching latest versions and NVIDIA driver information...")
 	log.Printf("Processing %d kernels with %d concurrent workers", totalKernels, MaxConcurrency)
 
+	// Initialize progress state
+	progressMux.Lock()
+	progressTotal = totalKernels
+	progressCompleted = 0
+	progressInProgress = true
+	progressStart = time.Now()
+	progressMux.Unlock()
+
 	// Step 1: Process each kernel to get LRM versions and NVIDIA driver versions
 	semaphore := make(chan bool, MaxConcurrency)
 	var wg sync.WaitGroup
@@ -368,6 +383,13 @@ func fetchLatestVersions(kernels []KernelLRMResult) ([]KernelLRMResult, error) {
 			// Update progress
 			mu.Lock()
 			completed++
+			// Update shared progress tracker
+			progressMux.Lock()
+			if completed > progressCompleted {
+				progressCompleted = completed
+			}
+			progressMux.Unlock()
+
 			if completed%10 == 0 || completed == totalKernels {
 				log.Printf("Progress: %d/%d kernels processed (%.1f%%)", completed, totalKernels, float64(completed)/float64(totalKernels)*100)
 			}
@@ -377,6 +399,12 @@ func fetchLatestVersions(kernels []KernelLRMResult) ([]KernelLRMResult, error) {
 
 	wg.Wait()
 	log.Printf("Completed processing all kernels for LRM and NVIDIA driver versions")
+
+	// Mark progress finished
+	progressMux.Lock()
+	progressCompleted = totalKernels
+	progressInProgress = false
+	progressMux.Unlock()
 
 	// Step 2: Collect all unique NVIDIA driver packages that we found in DSC files
 	driverPackageSet := make(map[string]bool)
@@ -1188,4 +1216,31 @@ func GetCacheStatus() map[string]interface{} {
 	}
 
 	return status
+}
+
+// GetProgress returns a snapshot of current processing progress
+func GetProgress() map[string]interface{} {
+	progressMux.RLock()
+	defer progressMux.RUnlock()
+	percent := 0.0
+	if progressTotal > 0 {
+		percent = float64(progressCompleted) / float64(progressTotal) * 100.0
+	}
+	var etaSeconds int64 = 0
+	if progressInProgress && progressCompleted > 0 {
+		elapsed := time.Since(progressStart).Seconds()
+		rate := float64(progressCompleted) / elapsed
+		if rate > 0 {
+			remaining := float64(progressTotal-progressCompleted) / rate
+			etaSeconds = int64(remaining)
+		}
+	}
+	return map[string]interface{}{
+		"in_progress": progressInProgress,
+		"completed":   progressCompleted,
+		"total":       progressTotal,
+		"percent":     percent,
+		"started_at":  progressStart.Format("2006-01-02 15:04:05 UTC"),
+		"eta_seconds": etaSeconds,
+	}
 }

@@ -148,6 +148,13 @@ func NewWebService() (*WebService, error) {
 func NewWebServiceWithConfig(cfg *config.Config, templatePath string, supportedReleasesPath string) (*WebService, error) {
 	// Set global configuration for packages
 	packages.SetPackagesConfig(cfg)
+	// Ensure LRM and SRU processors use this configuration (for effective URL switching and HTTP settings)
+	lrm.SetProcessorConfig(cfg)
+	sru.SetSRUConfig(cfg)
+	// Apply HTTP client settings to LRM (timeouts/retries) if provided in config
+	if cfg != nil {
+		lrm.SetHTTPConfig(cfg.HTTP.GetTimeout(), cfg.HTTP.Retries)
+	}
 
 	// Initialize the service with empty cache
 	ws := &WebService{
@@ -824,6 +831,7 @@ func (ws *WebService) Start(addr string) error {
 
 	// New API endpoints
 	http.Handle("/api/lrm", chainMiddleware(http.HandlerFunc(apiHandler.LRMDataHandler)))
+	http.Handle("/api/lrm/progress", chainMiddleware(http.HandlerFunc(apiHandler.LRMProgressHandler)))
 	http.Handle("/api/health", chainMiddleware(http.HandlerFunc(apiHandler.HealthHandler)))
 	http.Handle("/api/routings", chainMiddleware(http.HandlerFunc(apiHandler.RoutingsHandler)))
 	http.Handle("/api/cache-status", chainMiddleware(http.HandlerFunc(apiHandler.CacheStatusHandler)))
