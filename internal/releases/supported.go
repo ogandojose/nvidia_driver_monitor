@@ -80,6 +80,30 @@ func PrintSupportedReleases(releases []SupportedRelease) {
 	fmt.Println("-------------------------------------------------------------------------------------------------------------------------------------------------------------")
 }
 
+// GetUniqueBranchMajors returns distinct major branch identifiers (e.g. "580") from the supported releases list
+func GetUniqueBranchMajors(releases []SupportedRelease) []string {
+	seen := make(map[string]struct{})
+	majors := make([]string, 0, len(releases))
+
+	for _, rel := range releases {
+		branch := rel.BranchName
+		if idx := strings.Index(branch, "-"); idx >= 0 {
+			branch = branch[:idx]
+		}
+		branch = strings.TrimSpace(branch)
+		if branch == "" {
+			continue
+		}
+		if _, ok := seen[branch]; ok {
+			continue
+		}
+		seen[branch] = struct{}{}
+		majors = append(majors, branch)
+	}
+
+	return majors
+}
+
 // UpdateSupportedUDAReleases updates supported releases with UDA release information
 func UpdateSupportedUDAReleases(udaEntries []drivers.DriverEntry, supportedReleases []SupportedRelease) {
 	// Build a map: major version -> latest non-beta DriverEntry

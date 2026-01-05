@@ -31,6 +31,13 @@ func main() {
 	packageQuery := "nvidia-graphics-drivers-570"
 	supportedReleasesFile := "data/supportedReleases.json"
 
+	// Read supported releases configuration upfront so we can limit branch traversal
+	supportedReleases, err := releases.ReadSupportedReleases(supportedReleasesFile)
+	if err != nil {
+		fmt.Printf("Error reading supported releases: %v\n", err)
+		return
+	}
+
 	// Disable logging for cleaner output
 	log.SetOutput(io.Discard)
 
@@ -43,8 +50,10 @@ func main() {
 
 	packages.PrintSourceVersionMapTable(sourceVersions)
 
+	branchMajors := releases.GetUniqueBranchMajors(supportedReleases)
+
 	// Get the latest UDA releases from nvidia.com
-	udaEntries, err := drivers.GetNvidiaDriverEntries(cfg)
+	udaEntries, err := drivers.GetNvidiaDriverEntries(cfg, branchMajors)
 	if err != nil {
 		fmt.Printf("Error fetching UDA releases: %v\n", err)
 		return
@@ -54,13 +63,6 @@ func main() {
 	_, allBranches, err := drivers.GetLatestServerDriverVersions(cfg)
 	if err != nil {
 		fmt.Printf("Error fetching server driver data: %v\n", err)
-		return
-	}
-
-	// Read supported releases configuration
-	supportedReleases, err := releases.ReadSupportedReleases(supportedReleasesFile)
-	if err != nil {
-		fmt.Printf("Error reading supported releases: %v\n", err)
 		return
 	}
 

@@ -319,7 +319,7 @@ func DefaultConfig() *Config {
 				CreatedSinceDate:     "2025-01-10",
 			},
 			NVIDIA: NVIDIAURLs{
-				DriverArchiveURL: "https://www.nvidia.com/en-us/drivers/unix/linux-amd64-display-archive/",
+				DriverArchiveURL: "https://download.nvidia.com/XFree86/Linux-x86_64/",
 				ServerDriversAPI: "https://docs.nvidia.com/datacenter/tesla/drivers/releases.json",
 			},
 			CDN: CDNURLs{

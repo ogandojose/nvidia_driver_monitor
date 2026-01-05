@@ -104,7 +104,7 @@ The configuration file contains:
       "published_sources_api": "https://api.launchpad.net/devel/ubuntu/+archive/primary"
     },
     "nvidia": {
-      "driver_archive_url": "https://www.nvidia.com/en-us/drivers/unix/linux-amd64-display-archive/"
+      "driver_archive_url": "https://download.nvidia.com/XFree86/Linux-x86_64/"
     },
     "cdn": {
       "bootstrap_css": "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"

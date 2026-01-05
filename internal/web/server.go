@@ -200,8 +200,16 @@ func NewWebServiceWithConfig(cfg *config.Config, templatePath string, supportedR
 func (ws *WebService) refreshData() error {
 	log.Printf("Refreshing data...")
 
-	// Get the latest UDA releases from nvidia.com
-	udaEntries, err := drivers.GetNvidiaDriverEntries(ws.config)
+	// Read supported releases configuration
+	supportedReleases, err := releases.ReadSupportedReleases(ws.supportedReleasesPath)
+	if err != nil {
+		return fmt.Errorf("failed to read supported releases: %v", err)
+	}
+
+	branchMajors := releases.GetUniqueBranchMajors(supportedReleases)
+
+	// Get the latest UDA releases from nvidia.com limited to supported majors
+	udaEntries, err := drivers.GetNvidiaDriverEntries(ws.config, branchMajors)
 	if err != nil {
 		return fmt.Errorf("failed to get UDA entries: %v", err)
 	}
@@ -210,12 +218,6 @@ func (ws *WebService) refreshData() error {
 	_, allBranches, err := drivers.GetLatestServerDriverVersions(ws.config)
 	if err != nil {
 		return fmt.Errorf("failed to get server driver versions: %v", err)
-	}
-
-	// Read supported releases configuration
-	supportedReleases, err := releases.ReadSupportedReleases(ws.supportedReleasesPath)
-	if err != nil {
-		return fmt.Errorf("failed to read supported releases: %v", err)
 	}
 
 	// Update supported releases with latest versions
