@@ -82,5 +82,33 @@
     },
     "current_upstream_version": "580.65.06",
     "date_published": "2025-08-04"
+  },
+  {
+    "branch_name": "590",
+    "is_server": true,
+    "is_supported": {
+      "bionic": true,
+      "devel": true,
+      "focal": true,
+      "jammy": true,
+      "noble": true,
+      "plucky": true
+    },
+    "current_upstream_version": "590.48.01",
+    "date_published": "2025-12-09"
+  },
+  {
+    "branch_name": "590-server",
+    "is_server": true,
+    "is_supported": {
+      "bionic": true,
+      "devel": true,
+      "focal": true,
+      "jammy": true,
+      "noble": true,
+      "plucky": true
+    },
+    "current_upstream_version": "590.48.01",
+    "date_published": "2025-12-09"
   }
 ]
