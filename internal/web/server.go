@@ -26,6 +26,7 @@ import (
 	"nvidia_driver_monitor/internal/packages"
 	"nvidia_driver_monitor/internal/releases"
 	"nvidia_driver_monitor/internal/sru"
+	"nvidia_driver_monitor/internal/utils"
 
 	version "github.com/knqyf263/go-deb-version"
 )
@@ -154,6 +155,7 @@ func NewWebServiceWithConfig(cfg *config.Config, templatePath string, supportedR
 	// Apply HTTP client settings to LRM (timeouts/retries) if provided in config
 	if cfg != nil {
 		lrm.SetHTTPConfig(cfg.HTTP.GetTimeout(), cfg.HTTP.Retries)
+		utils.SetHTTPAuthToken(cfg.HTTP.GetForgejoToken())
 	}
 
 	// Initialize the service with empty cache

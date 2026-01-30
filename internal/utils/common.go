@@ -17,6 +17,7 @@ var (
 	httpClient  = &http.Client{
 		Timeout: HTTPTimeout,
 	}
+	forgejoToken string
 )
 
 // SetHTTPConfig sets the HTTP timeout and retry configuration
@@ -37,6 +38,11 @@ func SetHTTPConfig(timeout time.Duration, retries int) {
 	log.Printf("HTTP configuration updated: timeout=%v, retries=%d", HTTPTimeout, HTTPRetries)
 }
 
+// SetHTTPAuthToken sets the Forgejo token used for authenticated raw file access.
+func SetHTTPAuthToken(token string) {
+	forgejoToken = strings.TrimSpace(token)
+}
+
 // HTTPGetWithRetry performs an HTTP GET request with timeout and retry logic
 func HTTPGetWithRetry(url string) (*http.Response, error) {
 	startTime := time.Now()
@@ -46,7 +52,15 @@ func HTTPGetWithRetry(url string) (*http.Response, error) {
 	collector := stats.GetStatsCollector()
 
 	for attempt := 1; attempt <= HTTPRetries; attempt++ {
-		resp, err := httpClient.Get(url)
+		req, err := http.NewRequest(http.MethodGet, url, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create request: %w", err)
+		}
+		if authHeader := forgejoAuthHeader(url); authHeader != "" {
+			req.Header.Set("Authorization", authHeader)
+		}
+
+		resp, err := httpClient.Do(req)
 		if err == nil {
 			// Record successful request
 			duration := time.Since(startTime)
@@ -71,6 +85,20 @@ func HTTPGetWithRetry(url string) (*http.Response, error) {
 	collector.RecordRequest(url, duration, HTTPRetries-1, false)
 
 	return nil, fmt.Errorf("all %d HTTP attempts failed, last error: %v", HTTPRetries, lastErr)
+}
+
+func forgejoAuthHeader(url string) string {
+	if forgejoToken == "" {
+		return ""
+	}
+	if !strings.Contains(url, "kernel.ubuntu.com/forgejo/") {
+		return ""
+	}
+	lower := strings.ToLower(forgejoToken)
+	if strings.HasPrefix(lower, "token ") || strings.HasPrefix(lower, "bearer ") {
+		return forgejoToken
+	}
+	return "token " + forgejoToken
 }
 
 // ExtractSeriesFromLink extracts series name from a Launchpad distro series link

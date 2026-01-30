@@ -260,6 +260,8 @@ type HTTPConfig struct {
 	Timeout   string `json:"timeout"` // Duration string like "10s"
 	Retries   int    `json:"retries"`
 	UserAgent string `json:"user_agent"`
+	// ForgejoToken is used to access protected Forgejo raw URLs (e.g., kernel-series.yaml)
+	ForgejoToken string `json:"forgejo_token"`
 }
 
 // TestingConfig holds testing/mock service configuration
@@ -281,6 +283,15 @@ func (h *HTTPConfig) GetTimeout() time.Duration {
 	}
 
 	return duration
+}
+
+// GetForgejoToken returns the Forgejo token from env or config.
+// Env var KERNEL_FORGEJO_TOKEN takes precedence.
+func (h *HTTPConfig) GetForgejoToken() string {
+	if token := os.Getenv("KERNEL_FORGEJO_TOKEN"); token != "" {
+		return token
+	}
+	return h.ForgejoToken
 }
 
 // DefaultConfig returns the default configuration

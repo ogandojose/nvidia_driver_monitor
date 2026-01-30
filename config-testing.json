@@ -49,7 +49,8 @@
   "http": {
     "timeout": "10s",
     "retries": 5,
-    "user_agent": "nvidia-driver-monitor/1.0"
+    "user_agent": "nvidia-driver-monitor/1.0",
+    "forgejo_token": ""
   },
   "testing": {
     "enabled": false,

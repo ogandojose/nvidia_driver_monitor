@@ -12,6 +12,7 @@ import (
 	"nvidia_driver_monitor/internal/packages"
 	"nvidia_driver_monitor/internal/releases"
 	"nvidia_driver_monitor/internal/sru"
+	"nvidia_driver_monitor/internal/utils"
 )
 
 func main() {
@@ -26,6 +27,7 @@ func main() {
 	lrm.SetProcessorConfig(cfg)
 	sru.SetSRUConfig(cfg)
 	packages.SetPackagesConfig(cfg)
+	utils.SetHTTPAuthToken(cfg.HTTP.GetForgejoToken())
 
 	// Configuration
 	packageQuery := "nvidia-graphics-drivers-570"

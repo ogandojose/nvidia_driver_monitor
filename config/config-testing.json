@@ -41,7 +41,8 @@
   "http": {
     "timeout": "5s",
     "retries": 3,
-    "user_agent": "NVIDIA-Driver-Monitor/Testing"
+    "user_agent": "NVIDIA-Driver-Monitor/Testing",
+    "forgejo_token": ""
   },
   "testing": {
     "enabled": true,
