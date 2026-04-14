@@ -44,6 +44,9 @@
     "user_agent": "NVIDIA-Driver-Monitor/Testing",
     "forgejo_token": ""
   },
+  "processing": {
+    "max_concurrency": 5
+  },
   "testing": {
     "enabled": true,
     "mock_server_port": 9999,

@@ -17,7 +17,7 @@ import (
 
 func main() {
 	// Load configuration
-	cfg, err := config.LoadConfig("config/config.json")
+	cfg, err := config.LoadConfig("config.json")
 	if err != nil {
 		log.Printf("Warning: Could not load config file, using defaults: %v", err)
 		cfg = config.DefaultConfig()
@@ -27,6 +27,8 @@ func main() {
 	lrm.SetProcessorConfig(cfg)
 	sru.SetSRUConfig(cfg)
 	packages.SetPackagesConfig(cfg)
+	lrm.SetHTTPConfig(cfg.HTTP.GetTimeout(), cfg.HTTP.Retries)
+	lrm.SetMaxConcurrency(cfg.Processing.GetMaxConcurrency())
 	utils.SetHTTPAuthToken(cfg.HTTP.GetForgejoToken())
 
 	// Configuration

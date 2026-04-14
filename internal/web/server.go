@@ -155,6 +155,7 @@ func NewWebServiceWithConfig(cfg *config.Config, templatePath string, supportedR
 	// Apply HTTP client settings to LRM (timeouts/retries) if provided in config
 	if cfg != nil {
 		lrm.SetHTTPConfig(cfg.HTTP.GetTimeout(), cfg.HTTP.Retries)
+		lrm.SetMaxConcurrency(cfg.Processing.GetMaxConcurrency())
 		utils.SetHTTPAuthToken(cfg.HTTP.GetForgejoToken())
 	}
 

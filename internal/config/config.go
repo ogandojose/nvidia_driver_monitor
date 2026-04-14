@@ -15,6 +15,7 @@ type Config struct {
 	RequestLimit RequestLimitConfig `json:"request_limit"`
 	URLs         URLConfig          `json:"urls"`
 	HTTP         HTTPConfig         `json:"http"`
+	Processing   ProcessingConfig   `json:"processing"`
 	Testing      TestingConfig      `json:"testing"`
 }
 
@@ -264,6 +265,11 @@ type HTTPConfig struct {
 	ForgejoToken string `json:"forgejo_token"`
 }
 
+// ProcessingConfig holds worker/concurrency configuration.
+type ProcessingConfig struct {
+	MaxConcurrency int `json:"max_concurrency"`
+}
+
 // TestingConfig holds testing/mock service configuration
 type TestingConfig struct {
 	Enabled        bool   `json:"enabled"`
@@ -283,6 +289,17 @@ func (h *HTTPConfig) GetTimeout() time.Duration {
 	}
 
 	return duration
+}
+
+// GetMaxConcurrency returns the configured worker count clamped to safe limits.
+func (p *ProcessingConfig) GetMaxConcurrency() int {
+	if p.MaxConcurrency < 1 {
+		return 10
+	}
+	if p.MaxConcurrency > 50 {
+		return 50
+	}
+	return p.MaxConcurrency
 }
 
 // GetForgejoToken returns the Forgejo token from env or config.
@@ -345,9 +362,12 @@ func DefaultConfig() *Config {
 			},
 		},
 		HTTP: HTTPConfig{
-			Timeout:   "10s",
+			Timeout:   "30s",
 			Retries:   5,
 			UserAgent: "nvidia-driver-monitor/1.0",
+		},
+		Processing: ProcessingConfig{
+			MaxConcurrency: 10,
 		},
 		Testing: TestingConfig{
 			Enabled:        false,

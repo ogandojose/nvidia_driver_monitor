@@ -11,7 +11,7 @@ import (
 
 func main() {
 	var (
-		configFile = flag.String("config", "config/config.json", "Path to configuration file")
+		configFile = flag.String("config", "config.json", "Path to configuration file")
 		generate   = flag.Bool("generate", false, "Generate default configuration file")
 		testing    = flag.Bool("testing", false, "Generate configuration with testing mode enabled")
 		validate   = flag.Bool("validate", false, "Validate configuration file")
@@ -53,6 +53,7 @@ func generateConfig(configFile string, testing bool) {
 		cfg.RateLimit.RequestsPerMinute = 100
 		cfg.HTTP.Retries = 3
 		cfg.HTTP.UserAgent = "NVIDIA-Driver-Monitor/Testing"
+		cfg.Processing.MaxConcurrency = 5
 	}
 
 	if err := config.SaveConfig(cfg, configFile); err != nil {
@@ -99,6 +100,10 @@ func validateConfig(configFile string) {
 
 	if cfg.HTTP.Timeout == "" {
 		log.Fatalf("❌ HTTP timeout cannot be empty")
+	}
+
+	if cfg.Processing.MaxConcurrency < 0 || cfg.Processing.MaxConcurrency > 50 {
+		log.Fatalf("❌ Processing max concurrency must be 0 for default or between 1 and 50")
 	}
 
 	// Validate request limits
@@ -151,6 +156,9 @@ func showConfig(configFile string) {
 	fmt.Printf("  Timeout: %s (%v)\n", cfg.HTTP.Timeout, cfg.HTTP.GetTimeout())
 	fmt.Printf("  Retries: %d\n", cfg.HTTP.Retries)
 	fmt.Printf("  User Agent: %s\n", cfg.HTTP.UserAgent)
+
+	fmt.Printf("\n⚙️ Processing Configuration:\n")
+	fmt.Printf("  Max concurrency: %d\n", cfg.Processing.GetMaxConcurrency())
 
 	fmt.Printf("\n🔗 External URLs:\n")
 	fmt.Printf("  Ubuntu Assets: %s\n", cfg.URLs.Ubuntu.AssetsBaseURL)

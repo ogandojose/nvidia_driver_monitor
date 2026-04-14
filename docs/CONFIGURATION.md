@@ -22,6 +22,15 @@ By default, the application looks for `config.json` in the current directory. Yo
   "rate_limit": {
     "requests_per_minute": 60,
     "enabled": true
+  },
+  "http": {
+    "timeout": "30s",
+    "retries": 5,
+    "user_agent": "nvidia-driver-monitor/1.0",
+    "forgejo_token": ""
+  },
+  "processing": {
+    "max_concurrency": 10
   }
 }
 ```
@@ -55,6 +64,21 @@ By default, the application looks for `config.json` in the current directory. Yo
 |--------|------|---------|-------------|
 | `requests_per_minute` | integer | `60` | Maximum requests per minute per IP |
 | `enabled` | boolean | `true` | Enable rate limiting |
+
+### HTTP Client Configuration
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `timeout` | string | `"30s"` | Per-attempt outbound HTTP timeout |
+| `retries` | integer | `5` | Total outbound HTTP attempts |
+| `user_agent` | string | `"nvidia-driver-monitor/1.0"` | Outbound HTTP user agent |
+| `forgejo_token` | string | `""` | Optional token for protected kernel Forgejo URLs |
+
+### Processing Configuration
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `max_concurrency` | integer | `10` | Maximum concurrent LRM/kernel workers |
 
 ## Command Line Flags
 

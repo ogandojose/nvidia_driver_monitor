@@ -39,10 +39,13 @@
     }
   },
   "http": {
-    "timeout": "10s",
+    "timeout": "30s",
     "retries": 5,
     "user_agent": "nvidia-driver-monitor/1.0",
     "forgejo_token": ""
+  },
+  "processing": {
+    "max_concurrency": 10
   },
   "testing": {
     "enabled": false,

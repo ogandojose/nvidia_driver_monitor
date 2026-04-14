@@ -17,10 +17,7 @@ StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=nvidia-driver-monitor
 
-# Environment variables for network timeouts
-Environment=HTTP_TIMEOUT=30s
-Environment=DIAL_TIMEOUT=10s
-Environment=TLS_HANDSHAKE_TIMEOUT=10s
+# Network timeout, retry, and worker settings are read from /opt/nvidia-driver-monitor/config.json
 
 # Security settings
 NoNewPrivileges=true

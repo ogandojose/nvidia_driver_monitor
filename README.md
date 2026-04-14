@@ -51,7 +51,7 @@ The application uses a centralized configuration system to manage all external U
 
 ### Configuration File
 
-By default, the application looks for `config/config.json`. If not found, it uses built-in defaults.
+By default, the application looks for `config.json` in the current directory. If not found, it uses built-in defaults.
 
 #### Generating Configuration
 
@@ -61,14 +61,14 @@ Use the config management tool to generate a default configuration file:
 # Build the config tool
 make config
 
-# Generate default configuration to config/ directory
-./config-tool -generate -config config/config.json
+# Generate default configuration
+./config-tool -generate -config config.json
 
 # Show current configuration
-./config-tool -show -config config/config.json
+./config-tool -show -config config.json
 
 # Validate configuration file
-./config-tool -validate -config config/config.json
+./config-tool -validate -config config.json
 ```
 
 #### Configuration Structure
@@ -85,6 +85,7 @@ The configuration file contains:
   - CDN resources (Bootstrap, Chart.js, etc.)
   - Kernel information URLs
 - **HTTP Client**: Timeout and retry settings
+- **Processing**: Concurrent worker settings
 
 #### Example Configuration
 
@@ -94,6 +95,15 @@ The configuration file contains:
     "port": 8080,
     "https_port": 8443,
     "enable_https": false
+  },
+  "http": {
+    "timeout": "30s",
+    "retries": 5,
+    "user_agent": "nvidia-driver-monitor/1.0",
+    "forgejo_token": ""
+  },
+  "processing": {
+    "max_concurrency": 10
   },
   "urls": {
     "ubuntu": {

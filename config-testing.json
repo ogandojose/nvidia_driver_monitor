@@ -47,13 +47,16 @@
     }
   },
   "http": {
-    "timeout": "10s",
-    "retries": 5,
-    "user_agent": "nvidia-driver-monitor/1.0",
+    "timeout": "5s",
+    "retries": 3,
+    "user_agent": "NVIDIA-Driver-Monitor/Testing",
     "forgejo_token": ""
   },
+  "processing": {
+    "max_concurrency": 5
+  },
   "testing": {
-    "enabled": false,
+    "enabled": true,
     "mock_server_port": 9999,
     "data_dir": "test-data"
   }
