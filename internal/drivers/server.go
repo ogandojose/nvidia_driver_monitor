@@ -3,8 +3,11 @@ package drivers
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"sort"
+	"strings"
 	"time"
 
 	"nvidia_driver_monitor/internal/config"
@@ -31,15 +34,23 @@ type DriverInfo struct {
 
 // GetLatestServerDriverVersions retrieves the latest server driver versions
 func GetLatestServerDriverVersions(cfg *config.Config) (map[string]DriverInfo, AllBranches, error) {
-	url := cfg.URLs.NVIDIA.ServerDriversAPI
+	url := cfg.GetEffectiveURLs().NVIDIA.ServerDriversAPI
 	resp, err := utils.HTTPGetWithRetry(url)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch server driver data: %w", err)
 	}
 	defer resp.Body.Close()
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to read server driver data: %w", err)
+	}
+	if err := validateJSONResponse(resp, body); err != nil {
+		return nil, nil, err
+	}
+
 	var data AllBranches
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+	if err := json.Unmarshal(body, &data); err != nil {
 		return nil, nil, fmt.Errorf("failed to decode JSON: %w", err)
 	}
 
@@ -86,6 +97,34 @@ func GetLatestServerDriverVersions(cfg *config.Config) (map[string]DriverInfo, A
 	}
 
 	return latestVersions, data, nil
+}
+
+func validateJSONResponse(resp *http.Response, body []byte) error {
+	contentType := resp.Header.Get("Content-Type")
+	preview := responsePreview(body)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("unexpected server driver response from %s: status=%s content_type=%q body_preview=%q",
+			resp.Request.URL.String(), resp.Status, contentType, preview)
+	}
+	if contentType != "" && !strings.Contains(strings.ToLower(contentType), "json") {
+		return fmt.Errorf("unexpected server driver content from %s: status=%s content_type=%q body_preview=%q",
+			resp.Request.URL.String(), resp.Status, contentType, preview)
+	}
+	trimmed := strings.TrimSpace(string(body))
+	if trimmed == "" || (trimmed[0] != '{' && trimmed[0] != '[') {
+		return fmt.Errorf("unexpected server driver body from %s: status=%s content_type=%q body_preview=%q",
+			resp.Request.URL.String(), resp.Status, contentType, preview)
+	}
+	return nil
+}
+
+func responsePreview(body []byte) string {
+	const maxPreviewBytes = 160
+	preview := string(body)
+	if len(body) > maxPreviewBytes {
+		preview = string(body[:maxPreviewBytes])
+	}
+	return strings.Join(strings.Fields(preview), " ")
 }
 
 // PrintDriverVersions prints driver versions in a formatted table

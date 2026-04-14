@@ -29,6 +29,7 @@ func main() {
 	packages.SetPackagesConfig(cfg)
 	lrm.SetHTTPConfig(cfg.HTTP.GetTimeout(), cfg.HTTP.Retries)
 	lrm.SetMaxConcurrency(cfg.Processing.GetMaxConcurrency())
+	utils.SetHTTPUserAgent(cfg.HTTP.UserAgent)
 	utils.SetHTTPAuthToken(cfg.HTTP.GetForgejoToken())
 
 	// Configuration

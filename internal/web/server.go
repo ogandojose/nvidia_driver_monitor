@@ -156,6 +156,7 @@ func NewWebServiceWithConfig(cfg *config.Config, templatePath string, supportedR
 	if cfg != nil {
 		lrm.SetHTTPConfig(cfg.HTTP.GetTimeout(), cfg.HTTP.Retries)
 		lrm.SetMaxConcurrency(cfg.Processing.GetMaxConcurrency())
+		utils.SetHTTPUserAgent(cfg.HTTP.UserAgent)
 		utils.SetHTTPAuthToken(cfg.HTTP.GetForgejoToken())
 	}
 
@@ -220,7 +221,9 @@ func (ws *WebService) refreshData() error {
 	// Get server driver versions
 	_, allBranches, err := drivers.GetLatestServerDriverVersions(ws.config)
 	if err != nil {
-		return fmt.Errorf("failed to get server driver versions: %v", err)
+		log.Printf("Warning: Failed to get server driver versions: %v", err)
+		log.Printf("Continuing refresh without ERD/server driver updates")
+		allBranches = make(drivers.AllBranches)
 	}
 
 	// Update supported releases with latest versions

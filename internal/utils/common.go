@@ -12,9 +12,10 @@ import (
 
 // HTTP configuration variables
 var (
-	HTTPTimeout = 10 * time.Second // Default HTTP timeout
-	HTTPRetries = 5                // Default number of retries
-	httpClient  = &http.Client{
+	HTTPTimeout   = 10 * time.Second // Default HTTP timeout
+	HTTPRetries   = 5                // Default number of retries
+	HTTPUserAgent = "nvidia-driver-monitor/1.0"
+	httpClient    = &http.Client{
 		Timeout: HTTPTimeout,
 	}
 	forgejoToken string
@@ -38,6 +39,14 @@ func SetHTTPConfig(timeout time.Duration, retries int) {
 	log.Printf("HTTP configuration updated: timeout=%v, retries=%d", HTTPTimeout, HTTPRetries)
 }
 
+// SetHTTPUserAgent sets the User-Agent used for outbound HTTP requests.
+func SetHTTPUserAgent(userAgent string) {
+	if strings.TrimSpace(userAgent) == "" {
+		userAgent = "nvidia-driver-monitor/1.0"
+	}
+	HTTPUserAgent = userAgent
+}
+
 // SetHTTPAuthToken sets the Forgejo token used for authenticated raw file access.
 func SetHTTPAuthToken(token string) {
 	forgejoToken = strings.TrimSpace(token)
@@ -58,6 +67,9 @@ func HTTPGetWithRetry(url string) (*http.Response, error) {
 		}
 		if authHeader := forgejoAuthHeader(url); authHeader != "" {
 			req.Header.Set("Authorization", authHeader)
+		}
+		if HTTPUserAgent != "" {
+			req.Header.Set("User-Agent", HTTPUserAgent)
 		}
 
 		resp, err := httpClient.Do(req)
