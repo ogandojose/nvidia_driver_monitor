@@ -113,6 +113,39 @@ func forgejoAuthHeader(url string) string {
 	return "token " + forgejoToken
 }
 
+// ValidateYAMLResponse checks that a response body looks like YAML rather than an HTML login page.
+func ValidateYAMLResponse(resp *http.Response, body []byte, label string) error {
+	contentType := resp.Header.Get("Content-Type")
+	preview := responsePreview(body)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("unexpected %s response from %s: status=%s content_type=%q body_preview=%q",
+			label, resp.Request.URL.String(), resp.Status, contentType, preview)
+	}
+
+	trimmed := strings.TrimSpace(string(body))
+	if trimmed == "" {
+		return fmt.Errorf("unexpected empty %s response from %s", label, resp.Request.URL.String())
+	}
+
+	lowerContentType := strings.ToLower(contentType)
+	lowerBody := strings.ToLower(trimmed)
+	if strings.Contains(lowerContentType, "html") || strings.HasPrefix(lowerBody, "<!doctype html") || strings.HasPrefix(lowerBody, "<html") {
+		return fmt.Errorf("unexpected %s content from %s: status=%s content_type=%q body_preview=%q",
+			label, resp.Request.URL.String(), resp.Status, contentType, preview)
+	}
+
+	return nil
+}
+
+func responsePreview(body []byte) string {
+	const maxPreviewBytes = 160
+	preview := string(body)
+	if len(body) > maxPreviewBytes {
+		preview = string(body[:maxPreviewBytes])
+	}
+	return strings.Join(strings.Fields(preview), " ")
+}
+
 // ExtractSeriesFromLink extracts series name from a Launchpad distro series link
 func ExtractSeriesFromLink(link string) string {
 	parts := strings.Split(strings.TrimRight(link, "/"), "/")

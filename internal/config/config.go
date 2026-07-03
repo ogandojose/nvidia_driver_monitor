@@ -344,7 +344,7 @@ func DefaultConfig() *Config {
 				PublishedSourcesAPI:  "https://api.launchpad.net/devel/ubuntu/+archive/primary",
 				PublishedBinariesAPI: "https://api.launchpad.net/devel/ubuntu/+archive/primary",
 				UbuntuSeriesBaseURL:  "https://api.launchpad.net/devel/ubuntu",
-				CreatedSinceDate:     "2025-01-10",
+				CreatedSinceDate:     "2026-01-01",
 			},
 			NVIDIA: NVIDIAURLs{
 				DriverArchiveURL: "https://download.nvidia.com/XFree86/Linux-x86_64/",

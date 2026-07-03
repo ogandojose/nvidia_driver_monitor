@@ -68,6 +68,9 @@ func FetchSRUCycles() (*SRUCycles, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
+	if err := utils.ValidateYAMLResponse(resp, body, "SRU cycle YAML"); err != nil {
+		return nil, err
+	}
 
 	// Parse YAML into a map
 	var cycleMap map[string]SRUCycle

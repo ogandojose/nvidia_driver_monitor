@@ -118,6 +118,9 @@ func FetchKernelLRMData(routing string) (*LRMVerifierData, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read kernel-series.yaml: %v", err)
 	}
+	if err := utils.ValidateYAMLResponse(resp, body, "kernel-series.yaml"); err != nil {
+		return nil, err
+	}
 
 	// Debug: log the first few lines to see what we got
 	lines := strings.Split(string(body), "\n")
@@ -237,6 +240,9 @@ func FetchKernelLRMDataDebug(routing string) (*LRMVerifierData, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read kernel-series.yaml: %v", err)
 	}
+	if err := utils.ValidateYAMLResponse(resp, body, "kernel-series.yaml"); err != nil {
+		return nil, err
+	}
 
 	// Parse YAML
 	var kernelSeries KernelSeries
@@ -329,7 +335,7 @@ func FetchKernelLRMDataForAllRoutings() (*LRMVerifierData, error) {
 
 // fetchLatestVersions queries Launchpad API for latest package versions and NVIDIA drivers
 func fetchLatestVersions(kernels []KernelLRMResult) ([]KernelLRMResult, error) {
-	const dateThreshold = "2025-01-10"
+	const dateThreshold = "2026-01-01"
 
 	totalKernels := len(kernels)
 	log.Printf("Fetching latest versions and NVIDIA driver information...")
@@ -683,7 +689,7 @@ func GetLatestDKMSVersions(release string) (map[string]string, error) {
 
 	dkmsVersions := make(map[string]string)
 	const maxConcurrency = 5
-	const dateThreshold = "2025-01-10"
+	const dateThreshold = "2026-01-01"
 
 	semaphore := make(chan bool, maxConcurrency)
 	var wg sync.WaitGroup
@@ -1069,6 +1075,9 @@ func GetAvailableRoutings() ([]string, error) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %v", err)
+	}
+	if err := utils.ValidateYAMLResponse(resp, body, "kernel-series.yaml"); err != nil {
+		return nil, err
 	}
 
 	// Parse YAML

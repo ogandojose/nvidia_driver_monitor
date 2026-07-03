@@ -79,19 +79,16 @@ func GetMaxSourceVersionsArchive(cfg *config.Config, packageName string) (*Sourc
 
 	resp, err := utils.HTTPGetWithRetry(url)
 	if err != nil {
-		log.Fatalf("HTTP request failed: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch source package history for %s: %w", packageName, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		log.Fatalf("Unexpected status code: %d", resp.StatusCode)
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	var apiResp SourceAPIResponse
 	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
-		log.Fatalf("Failed to parse JSON: %v", err)
 		return nil, fmt.Errorf("failed to decode JSON: %w", err)
 	}
 
