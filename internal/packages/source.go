@@ -254,7 +254,7 @@ func PrintSourceVersionMapTableWithSupported(vps *SourceVersionPerSeries, suppor
 
 	supported, found := supportedMap[branchName]
 
-	orderedSeries := []string{"questing", "plucky", "noble", "jammy", "focal", "bionic"} // Specify the desired order of series
+	orderedSeries := []string{"resolute", "noble", "jammy", "focal", "bionic"} // Specify the desired order of series
 
 	for _, series := range orderedSeries {
 		pocket, exists := vps.VersionMap[series]

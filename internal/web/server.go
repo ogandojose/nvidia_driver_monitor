@@ -351,7 +351,7 @@ func (ws *WebService) generatePackageData(packageName string) (*PackageData, err
 
 	supported, found := supportedMap[branchName]
 
-	orderedSeries := []string{"questing", "plucky", "noble", "jammy", "focal", "bionic"}
+	orderedSeries := []string{"resolute", "noble", "jammy", "focal", "bionic"}
 	var seriesData []SeriesData
 
 	// Check if we have any source versions at all
@@ -493,10 +493,8 @@ func (ws *WebService) generatePackageData(packageName string) (*PackageData, err
 					seriesSupported = supported.IsSupported["jammy"]
 				case "noble":
 					seriesSupported = supported.IsSupported["noble"]
-				case "plucky":
-					seriesSupported = supported.IsSupported["plucky"]
-				case "questing":
-					seriesSupported = supported.IsSupported["devel"] // devel maps to development series
+				case "resolute":
+					seriesSupported = supported.IsSupported["resolute"]
 				}
 
 				if seriesSupported {
@@ -1188,7 +1186,7 @@ func generateLRMDataFromSupportedReleases(supportedReleases []releases.Supported
 		"jammy":    "22.04",
 		"focal":    "20.04",
 		"bionic":   "18.04",
-		"plucky":   "25.04",
+		"resolute": "25.10",
 		"oracular": "24.10",
 	}
 
@@ -1251,7 +1249,7 @@ func generateLRMDataFromSupportedReleases(supportedReleases []releases.Supported
 					LRMPackages:          []string{lrmPackage}, // Actual L-R-M package
 					HasLRM:               true,
 					Supported:            true,
-					Development:          codename == "devel" || codename == "plucky",
+					Development:          codename == "devel" || codename == "resolute",
 					LTS:                  series == "20.04" || series == "22.04" || series == "24.04",
 					ESM:                  series == "18.04",
 					LatestLRMVersion:     "1.0.0",       // Will be updated later

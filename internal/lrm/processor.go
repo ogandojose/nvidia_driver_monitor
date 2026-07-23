@@ -448,7 +448,7 @@ func fetchLatestVersions(kernels []KernelLRMResult) ([]KernelLRMResult, error) {
 			}
 
 			// Extract Updates/Security versions for each series (same logic as main dashboard)
-			seriesList := []string{"questing", "plucky", "noble", "jammy", "focal", "bionic"}
+			seriesList := []string{"resolute", "noble", "jammy", "focal", "bionic"}
 			packageVersions := make(map[string]string)
 
 			for _, series := range seriesList {
