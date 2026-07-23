@@ -21,7 +21,7 @@
       "published_sources_api": "https://api.launchpad.net/devel/ubuntu/+archive/primary",
       "published_binaries_api": "https://api.launchpad.net/devel/ubuntu/+archive/primary",
       "ubuntu_series_base_url": "https://api.launchpad.net/devel/ubuntu",
-      "created_since_date": "2025-01-10"
+      "created_since_date": "2026-01-01"
     },
     "nvidia": {
       "driver_archive_url": "https://download.nvidia.com/XFree86/Linux-x86_64/",
@@ -45,7 +45,7 @@
     "forgejo_token": ""
   },
   "processing": {
-    "max_concurrency": 10
+    "max_concurrency": 4
   },
   "testing": {
     "enabled": false,

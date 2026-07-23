@@ -8,7 +8,7 @@
       "focal": true,
       "jammy": true,
       "noble": true,
-      "plucky": true
+      "resolute": true
     },
     "current_upstream_version": "535.261.03",
     "date_published": "2025-07-17"
@@ -22,7 +22,7 @@
       "focal": true,
       "jammy": true,
       "noble": true,
-      "plucky": true
+      "resolute": true
     },
     "current_upstream_version": "535.261.03",
     "date_published": "2025-07-17"
@@ -36,7 +36,7 @@
       "focal": true,
       "jammy": true,
       "noble": true,
-      "plucky": true
+      "resolute": true
     },
     "current_upstream_version": "570.172.08",
     "date_published": "2025-07-17"
@@ -50,7 +50,7 @@
       "focal": true,
       "jammy": true,
       "noble": true,
-      "plucky": true
+      "resolute": true
     },
     "current_upstream_version": "570.172.08",
     "date_published": "2025-07-17"
@@ -64,7 +64,7 @@
       "focal": true,
       "jammy": true,
       "noble": true,
-      "plucky": true
+      "resolute": true
     },
     "current_upstream_version": "580.65.06",
     "date_published": "2025-08-04"
@@ -78,7 +78,7 @@
       "focal": true,
       "jammy": true,
       "noble": true,
-      "plucky": true
+      "resolute": true
     },
     "current_upstream_version": "580.65.06",
     "date_published": "2025-08-04"
@@ -92,7 +92,7 @@
       "focal": true,
       "jammy": true,
       "noble": true,
-      "plucky": true
+      "resolute": true
     },
     "current_upstream_version": "590.48.01",
     "date_published": "2025-12-09"
@@ -106,7 +106,7 @@
       "focal": true,
       "jammy": true,
       "noble": true,
-      "plucky": true
+      "resolute": true
     },
     "current_upstream_version": "590.48.01",
     "date_published": "2025-12-09"
